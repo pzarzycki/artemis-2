@@ -1,0 +1,35 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+.btn.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+.icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+}

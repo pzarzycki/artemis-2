@@ -1,0 +1,70 @@
+:root {
+  --bg-primary: #0a0a12;
+  --bg-surface: rgba(10, 12, 24, 0.75);
+  --bg-surface-hover: rgba(15, 18, 36, 0.85);
+  --border: rgba(0, 212, 170, 0.18);
+  --accent: #00d4aa;
+  --accent-dim: rgba(0, 212, 170, 0.5);
+  --accent-glow: rgba(0, 212, 170, 0.15);
+  --text-primary: #e8eaf0;
+  --text-secondary: rgba(232, 234, 240, 0.6);
+  --text-accent: #00d4aa;
+  --danger: #ff6b6b;
+  --warning: #ffd166;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --blur: blur(12px);
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.hud-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  box-shadow: var(--shadow);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.accent {
+  color: var(--text-accent);
+}
