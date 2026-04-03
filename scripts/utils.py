@@ -17,8 +17,12 @@ def ensure_dirs() -> None:
     KERNELS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def download_file(url: str, dest: Path, label: str = "") -> Path:
-    """Download a file with progress display, skip if already exists."""
+def download_file(url: str, dest: Path, label: str = "", referer: str = "") -> Path:
+    """Download a file with progress display, skip if already exists.
+
+    Sends browser-like headers to satisfy hotlink protection on sites like
+    Solar System Scope and NASA SVS.
+    """
     import requests
     from tqdm import tqdm
 
@@ -28,7 +32,18 @@ def download_file(url: str, dest: Path, label: str = "") -> Path:
 
     label = label or dest.name
     print(f"  [download] {label} ...")
-    r = requests.get(url, stream=True, timeout=120)
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0"
+        ),
+        "Accept": "image/tiff,image/jpeg,image/png,image/*,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    if referer:
+        headers["Referer"] = referer
+
+    r = requests.get(url, stream=True, timeout=300, headers=headers)
     r.raise_for_status()
     total = int(r.headers.get("content-length", 0))
     with open(dest, "wb") as f, tqdm(total=total, unit="B", unit_scale=True, desc=label) as bar:
