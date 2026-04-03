@@ -2,29 +2,30 @@ import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { Vec3 } from '../../lib/coordinates/types';
+import { LocalAxes } from './DebugAxes';
 
 interface SpacecraftProps {
-  posECI: Vec3;
+  position: Vec3;
   velECI: Vec3;
 }
 
-export default function Spacecraft({ posECI, velECI }: SpacecraftProps) {
+export default function Spacecraft({ position, velECI }: SpacecraftProps) {
   const groupRef = useRef<THREE.Group>(null!);
 
   const SCALE = 300; // 300 km visual size (exaggerated; Orion is ~5m real)
 
   useFrame(() => {
     if (!groupRef.current) return;
-    groupRef.current.position.set(...posECI);
+    groupRef.current.position.set(...position);
     // Always face prograde
     const vel = new THREE.Vector3(...velECI);
     if (vel.length() > 0) {
       const up = new THREE.Vector3(0, 0, 1);
       if (Math.abs(vel.normalize().dot(up)) > 0.99) up.set(1, 0, 0);
       groupRef.current.lookAt(
-        posECI[0] + velECI[0],
-        posECI[1] + velECI[1],
-        posECI[2] + velECI[2],
+        position[0] + velECI[0],
+        position[1] + velECI[1],
+        position[2] + velECI[2],
       );
     }
   });
@@ -61,6 +62,7 @@ export default function Spacecraft({ posECI, velECI }: SpacecraftProps) {
           toneMapped={false}
         />
       </mesh>
+      <LocalAxes size={SCALE * 2.2} />
     </group>
   );
 }

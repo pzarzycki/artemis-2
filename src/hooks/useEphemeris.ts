@@ -52,6 +52,7 @@ function analyticalEphemeris(jd: number): EphemerisState {
     sunPosECI,
     gmstRad: gmstFromJD(jd),
     moonOrientation: [orientation.poleRA, orientation.poleDec, orientation.W],
+    earthPosBCRS: null,
   };
 }
 

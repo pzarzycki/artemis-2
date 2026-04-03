@@ -108,7 +108,6 @@
   background: var(--accent);
   border-radius: 2px;
   pointer-events: none;
-  transition: width 0.1s linear;
 }
 
 /* Track styling */

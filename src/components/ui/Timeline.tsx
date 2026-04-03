@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { useMissionStore } from '../../store/missionStore';
-import { useMissionTime } from '../../hooks/useMissionTime';
 import { useTrajectory } from '../../hooks/useTrajectory';
 import { ARTEMIS2_LAUNCH_JD } from '../../lib/time';
 import styles from './Timeline.module.css';
@@ -11,17 +10,16 @@ export default function Timeline() {
   const { currentJD, isPlaying, playbackSpeed, setCurrentJD, setIsPlaying, setPlaybackSpeed } =
     useMissionStore();
   const { trajectory } = useTrajectory(currentJD);
-  const { julianDate } = useMissionTime();
 
   const startJD = trajectory?.startJD ?? ARTEMIS2_LAUNCH_JD;
   const endJD = trajectory?.endJD ?? ARTEMIS2_LAUNCH_JD + MISSION_DURATION_DAYS;
   const phases = trajectory?.phases ?? [];
 
-  const progress = Math.max(0, Math.min(1, (julianDate - startJD) / (endJD - startJD)));
+  const progress = Math.max(0, Math.min(1, (currentJD - startJD) / (endJD - startJD)));
 
   const handleScrub = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const t = parseFloat(e.target.value);
+    (e: React.FormEvent<HTMLInputElement>) => {
+      const t = parseFloat(e.currentTarget.value);
       const newJD = startJD + t * (endJD - startJD);
       setCurrentJD(newJD);
     },
@@ -86,7 +84,7 @@ export default function Timeline() {
           max={1}
           step={0.00001}
           value={progress}
-          onChange={handleScrub}
+          onInput={handleScrub}
           className={styles.slider}
         />
         <div className={styles.progressFill} style={{ width: `${progress * 100}%` }} />

@@ -2,23 +2,26 @@ import type { Vec3 } from '../coordinates/types';
 
 /** Pre-computed ephemeris data from Python pipeline */
 export interface EphemerisData {
-  /** Start Julian Date of the series */
   startJD: number;
-  /** Step size in hours */
   intervalHours: number;
-  /** Number of samples */
   count: number;
-  /** Moon positions in ECI J2000 (km), one entry per step */
+  timeScale?: string;
+  coordinateFrame?: string;
+  barycentricFrame?: string;
+  earthRotationModel?: string;
+  moonOrientationModel?: string;
+  /** Moon positions in GCRS J2000 (km) */
   moonPosECI: Vec3[];
-  /** Sun positions in ECI J2000 (km), one entry per step */
+  /** Sun positions in GCRS J2000 (km) */
   sunPosECI: Vec3[];
-  /** GMST angles (radians) at each step */
   gmstRad: number[];
-  /**
-   * Moon orientation [poleRA_deg, poleDec_deg, W_deg] per step.
-   * Derived from IAU 2009 model.
-   */
   moonOrientation: [number, number, number][];
+  /**
+   * Earth position in BCRS J2000 (km from Solar System Barycenter).
+   * Used to shift origin from GCRS→BCRS for the reference frame selector.
+   * Optional: absent in older ephemeris files (BCRS frame will be unavailable).
+   */
+  earthPosBCRS?: Vec3[];
 }
 
 /** Pre-computed trajectory data from Python pipeline */
@@ -27,6 +30,9 @@ export interface TrajectoryData {
   startJD: number;
   /** End Julian Date */
   endJD: number;
+  timeScale?: string;
+  coordinateFrame?: string;
+  sourceTimeScale?: string;
   /** Step size in minutes */
   intervalMinutes: number;
   /** Number of trajectory points */
@@ -61,6 +67,8 @@ export interface EphemerisState {
   sunPosECI: Vec3;
   gmstRad: number;
   moonOrientation: [number, number, number];
+  /** Earth position in BCRS J2000 (km from SSB). Null if not in ephemeris data. */
+  earthPosBCRS: Vec3 | null;
 }
 
 /** Catmull-Rom cubic interpolation between four scalars */
@@ -106,6 +114,8 @@ function interpAngle(
 }
 
 /** Interpolate ephemeris data at the given Julian Date */
+const TWO_PI = 2 * Math.PI;
+
 export function interpolateEphemeris(data: EphemerisData, jd: number): EphemerisState {
   const step = data.intervalHours / 24; // in JD days
   const raw = (jd - data.startJD) / step;
@@ -113,16 +123,32 @@ export function interpolateEphemeris(data: EphemerisData, jd: number): Ephemeris
   const t = raw - idx;
   const clampedIdx = Math.max(0, Math.min(data.count - 2, idx));
 
+  // GMST is stored unwrapped (monotonically increasing) for correct Catmull-Rom interpolation.
+  // Normalize back to [0, 2π) after interpolating.
+  const gmstRaw = interpAngle(data.gmstRad, data.count, clampedIdx, t);
+  const gmstRad = ((gmstRaw % TWO_PI) + TWO_PI) % TWO_PI;
+
+  // Moon W is also stored unwrapped — normalize back to [0°, 360°) after interpolating.
+  const moonOrientRaw = interpVec3(
+    data.moonOrientation as unknown as Vec3[],
+    data.count,
+    clampedIdx,
+    t,
+  ) as unknown as [number, number, number];
+  const moonOrientation: [number, number, number] = [
+    moonOrientRaw[0],
+    moonOrientRaw[1],
+    ((moonOrientRaw[2] % 360) + 360) % 360,
+  ];
+
   return {
     moonPosECI: interpVec3(data.moonPosECI, data.count, clampedIdx, t),
     sunPosECI: interpVec3(data.sunPosECI, data.count, clampedIdx, t),
-    gmstRad: interpAngle(data.gmstRad, data.count, clampedIdx, t),
-    moonOrientation: interpVec3(
-      data.moonOrientation as unknown as Vec3[],
-      data.count,
-      clampedIdx,
-      t,
-    ) as unknown as [number, number, number],
+    gmstRad,
+    moonOrientation,
+    earthPosBCRS: data.earthPosBCRS
+      ? interpVec3(data.earthPosBCRS, data.count, clampedIdx, t)
+      : null,
   };
 }
 

@@ -1,5 +1,5 @@
-import { Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Suspense, useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { KernelSize } from 'postprocessing';
 import Earth from './Earth';
@@ -7,69 +7,83 @@ import Moon from './Moon';
 import Sun from './Sun';
 import Spacecraft from './Spacecraft';
 import Trajectory from './Trajectory';
-import Starfield from './Starfield';
 import CameraRig from './CameraRig';
-import Atmosphere from './Atmosphere';
+import WorldHud from './WorldHud';
 import { useMissionStore } from '../../store/missionStore';
-import { useMissionTime } from '../../hooks/useMissionTime';
-import { useEphemeris } from '../../hooks/useEphemeris';
-import { useTrajectory } from '../../hooks/useTrajectory';
+import { useSceneModel } from '../../hooks/useSceneModel';
+
+function DebugOverlay() {
+  const { gl } = useThree();
+
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const onLost = (e: Event) => console.error('[WebGL] CONTEXT LOST', e);
+    const onRestored = () => console.warn('[WebGL] context restored');
+    canvas.addEventListener('webglcontextlost', onLost);
+    canvas.addEventListener('webglcontextrestored', onRestored);
+    return () => {
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
+    };
+  }, [gl]);
+
+  return null;
+}
 
 export default function Scene() {
-  const { julianDate } = useMissionTime();
-  const ephemeris = useEphemeris(julianDate);
-  const { state: spacecraftState, trajectory } = useTrajectory(julianDate);
   const cameraTarget = useMissionStore((s) => s.cameraTarget);
+  const scene = useSceneModel();
 
   return (
     <Canvas
-      camera={{ near: 0.1, far: 1e8, fov: 45 }}
+      camera={{ near: 0.1, far: 1e9, fov: 45 }}
       gl={{ logarithmicDepthBuffer: true, antialias: true }}
       style={{ background: '#000008' }}
       frameloop="always"
+      onCreated={({ camera }) => {
+        camera.up.set(0, 0, 1);
+        camera.lookAt(0, 0, 0);
+      }}
     >
+      <DebugOverlay />
       <Suspense fallback={null}>
-        {/* Ambient fill — nearly zero for realistic space */}
         <ambientLight intensity={0.03} />
-
-        <Starfield />
-
-        <Sun sunPosECI={ephemeris.sunPosECI} />
-
-        <Earth gmstRad={ephemeris.gmstRad} />
-        <Atmosphere />
-
+        <Sun position={scene.sunWorld} />
+        <Earth position={scene.earthWorld} gmstRad={scene.gmstRad} />
         <Moon
-          posECI={ephemeris.moonPosECI}
-          orientation={ephemeris.moonOrientation}
+          position={scene.moonWorld}
+          orientation={scene.moonOrientation}
         />
-
-        {spacecraftState && (
-          <>
-            <Spacecraft posECI={spacecraftState.posECI} velECI={spacecraftState.velECI} />
-            <Trajectory
-              trajectory={trajectory}
-              currentJD={julianDate}
-              spacecraftPosECI={spacecraftState.posECI}
-            />
-          </>
+        {scene.spacecraftWorld && scene.spacecraftVelECI && (
+          <Spacecraft position={scene.spacecraftWorld} velECI={scene.spacecraftVelECI} />
+        )}
+        {scene.trajectory && (
+          <Trajectory
+            trajectory={scene.trajectory}
+            currentJD={scene.julianDate}
+            worldOffset={scene.earthWorld}
+          />
         )}
 
         <CameraRig
           target={cameraTarget}
-          moonPosECI={ephemeris.moonPosECI}
-          spacecraftPosECI={spacecraftState?.posECI ?? null}
+          referenceFrame={scene.referenceFrame}
+          earthWorld={scene.earthWorld}
+          moonWorld={scene.moonWorld}
+          spacecraftWorld={scene.spacecraftWorld}
         />
-
-        <EffectComposer>
-          <Bloom
-            kernelSize={KernelSize.LARGE}
-            luminanceThreshold={0.85}
-            luminanceSmoothing={0.3}
-            intensity={0.6}
-          />
-        </EffectComposer>
+        <WorldHud />
       </Suspense>
+
+      {/* EffectComposer outside Suspense — must never unmount or it causes black frames */}
+      <EffectComposer>
+        <Bloom
+          kernelSize={KernelSize.LARGE}
+          luminanceThreshold={0.82}
+          luminanceSmoothing={0.7}
+          intensity={0.6}
+        />
+      </EffectComposer>
     </Canvas>
   );
 }

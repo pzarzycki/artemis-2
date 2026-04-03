@@ -1,25 +1,27 @@
+import { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
 import type { Vec3 } from '../../lib/coordinates/types';
+import { LocalAxes } from './DebugAxes';
 
 interface MoonProps {
-  posECI: Vec3;
+  position: Vec3;
   orientation: [number, number, number]; // [poleRA_deg, poleDec_deg, W_deg]
 }
 
-export default function Moon({ posECI, orientation }: MoonProps) {
+export default function Moon({ position, orientation }: MoonProps) {
   const [albedoMap, normalMap] = useLoader(TextureLoader, [
     '/textures/moon_8k.jpg',
     '/textures/moon_normal_8k.jpg',
   ]);
 
-  // Build orientation quaternion from IAU Moon pole + prime meridian
-  const euler = moonOrientationToEuler(orientation);
+  // Memoize — moonOrientationToEuler creates new Three.js objects; only recompute when orientation changes
+  const euler = useMemo(() => moonOrientationToEuler(orientation), [orientation]);
 
   return (
     <mesh
-      position={posECI}
+      position={position}
       rotation={euler}
     >
       {/* Moon radius = 1737.4 km */}
@@ -30,6 +32,7 @@ export default function Moon({ posECI, orientation }: MoonProps) {
         roughness={0.95}
         metalness={0.0}
       />
+      <LocalAxes size={2600} />
     </mesh>
   );
 }

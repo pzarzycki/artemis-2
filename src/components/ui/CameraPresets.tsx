@@ -6,7 +6,7 @@ const PRESETS: { id: CameraTarget; label: string; icon: string }[] = [
   { id: 'overview', label: 'Overview', icon: '⊛' },
   { id: 'earth',    label: 'Earth',    icon: '◉' },
   { id: 'moon',     label: 'Moon',     icon: '◌' },
-  { id: 'spacecraft', label: 'Track', icon: '◈' },
+  { id: 'spacecraft', label: 'Spacecraft', icon: '◈' },
 ];
 
 export default function CameraPresets() {

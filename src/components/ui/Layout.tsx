@@ -7,6 +7,7 @@ import CameraPresets from './CameraPresets';
 import ModeToggle from './ModeToggle';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingOverlay from './LoadingOverlay';
+import FrameSelector from './FrameSelector';
 import styles from './Layout.module.css';
 
 export default function Layout() {
@@ -22,7 +23,10 @@ export default function Layout() {
       <div className={styles.hud}>
         <StatusBar />
         <div className={styles.sides}>
-          <CameraPresets />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <CameraPresets />
+            <FrameSelector />
+          </div>
           <InfoPanel />
         </div>
         <div className={styles.bottom}>

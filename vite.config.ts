@@ -1,9 +1,14 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  cacheDir: '/tmp/artemis-2-vite-cache',
   assetsInclude: ['**/*.gltf', '**/*.glb'],
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
   build: {
     target: 'esnext',
     rollupOptions: {
@@ -16,9 +21,8 @@ export default defineConfig({
     },
   },
   server: {
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
+    host: '0.0.0.0',
+    port: 5173,
+    strictPort: true,
   },
 });

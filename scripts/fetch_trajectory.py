@@ -1,72 +1,101 @@
 #!/usr/bin/env python3
 """
-Fetch / generate Artemis 2 spacecraft trajectory data.
+Fetch Artemis 2 spacecraft trajectory data from JPL Horizons.
 
-Primary source: JPL Horizons REST API (when spacecraft data is available).
-Fallback: Simulated free-return trajectory for pre-launch planning.
-
-Outputs public/data/trajectory.json with ECI J2000 positions/velocities.
+Target: -1024 (Orion EM-2 / Artemis 2 crew capsule)
+Source: JPL Horizons REST API, geocentric J2000, km, km/s
 
 Run with:
-    uv run python scripts/fetch_trajectory.py [--source horizons|simulated]
+    uv run python scripts/fetch_trajectory.py
+    uv run python scripts/fetch_trajectory.py --step-minutes 1  # higher resolution
 """
 
 import argparse
 import json
-import math
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from utils import ensure_dirs, DATA_DIR
+from utils import ensure_dirs, DATA_DIR, download_file, KERNELS_DIR
 
-# JPL Horizons REST API endpoint
 HORIZONS_API = "https://ssd.jpl.nasa.gov/api/horizons.api"
+NAIF_LSK_URL = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls"
 
-# Artemis 2 / Orion spacecraft Horizons target
-# NOTE: This ID (-91) is a placeholder. The actual Artemis 2 NAIF ID will be
-# assigned by JPL when trajectory data becomes available.
-ARTEMIS2_HORIZONS_ID = "-91"
+# Confirmed JPL Horizons ID for Artemis 2 / Orion EM-2
+ARTEMIS2_HORIZONS_ID = "-1024"
 
-# Mission epoch (placeholder — update when confirmed)
-LAUNCH_JD = 2461300.5  # ~2026-09-15 00:00 UTC (notional)
-MISSION_DURATION_DAYS = 10.3  # ~10.3 day mission for Artemis 2
+# Actual launch: 2026-Apr-01 22:35:12 UTC → JD 2461132.441111111
+LAUNCH_JD = 2461132.441111111
 
+# Horizons trajectory window (confirmed by probing the API):
+#   Data starts: 2026-APR-02 01:58:32.305 TDB  → JD 2461132.577
+#   Data ends:   2026-APR-10 23:54:07.802 TDB  → JD 2461141.496
+# Use JD format to avoid URL-encoding issues with spaces in date strings.
+TRAJ_START_JD = "JD2461132.584028"   # 2026-Apr-02 02:01 TDB (just after ICPS sep)
+TRAJ_STOP_JD  = "JD2461141.490278"  # 2026-Apr-10 23:46 TDB (8 min before data ends)
+
+# Real mission phase data derived from JPL OBJ_DATA / mission timeline
+# All JDs computed from confirmed UTC event times
 PHASES = [
-    {"name": "Launch/TLI", "startDayOffset": 0.0,  "endDayOffset": 0.25,  "color": "#ff6b6b"},
-    {"name": "Outbound",   "startDayOffset": 0.25,  "endDayOffset": 4.0,   "color": "#ffd166"},
-    {"name": "Lunar",      "startDayOffset": 4.0,   "endDayOffset": 7.5,   "color": "#00d4aa"},
-    {"name": "Return",     "startDayOffset": 7.5,   "endDayOffset": 10.0,  "color": "#4488cc"},
-    {"name": "Reentry",    "startDayOffset": 10.0,  "endDayOffset": 10.3,  "color": "#888899"},
+    # Launch through TLI burn (Apr 1 22:35 → Apr 2 23:54 UTC)
+    {"name": "Launch/Ascent/TLI",
+     "startJD": 2461132.441111,   # 2026-Apr-01 22:35:12 UTC
+     "endJD":   2461133.495833,   # 2026-Apr-02 23:54:00 UTC
+     "color": "#ff6b6b"},
+    # Outbound cruise: TLI to Moon approach (Apr 2 23:54 → Apr 6 12:00 UTC)
+    {"name": "Outbound Coast",
+     "startJD": 2461133.495833,
+     "endJD":   2461137.000000,   # ~36h before closest approach
+     "color": "#ffd166"},
+    # Lunar flyby (Apr 6 12:00 → Apr 7 12:00 UTC)
+    # Closest approach: Apr 6 23:06 UTC, max dist from Earth: Apr 6 23:09 UTC
+    {"name": "Lunar Flyby",
+     "startJD": 2461137.000000,
+     "endJD":   2461138.000000,
+     "color": "#00d4aa"},
+    # Return coast (Apr 7 12:00 → Apr 10 22:00 UTC)
+    {"name": "Return Coast",
+     "startJD": 2461138.000000,
+     "endJD":   2461141.416667,   # ~2026-Apr-11 22:00 UTC
+     "color": "#4488cc"},
+    # Reentry through splashdown (Apr 10 22:00 → Apr 11 00:17 UTC)
+    {"name": "Reentry/Splashdown",
+     "startJD": 2461141.416667,
+     "endJD":   2461141.511806,   # 2026-Apr-11 00:17:00 UTC
+     "color": "#888899"},
 ]
 
 
-def query_horizons(start_jd: float, end_jd: float, step_min: int) -> dict | None:
-    """Query JPL Horizons for Artemis 2 state vectors in J2000 ECI."""
+def query_horizons(start_time: str, stop_time: str, step_min: int) -> dict | None:
+    """
+    Query JPL Horizons for Artemis 2 ECI J2000 state vectors.
+
+    Uses CSV_FORMAT=YES so each data record is a single comma-separated line:
+      JDTDB, CalDate, X(km), Y(km), Z(km), VX(km/s), VY(km/s), VZ(km/s), LT, RG, RR
+    """
     try:
         import requests
 
-        start_dt = datetime.fromtimestamp((start_jd - 2440587.5) * 86400, tz=timezone.utc)
-        end_dt   = datetime.fromtimestamp((end_jd   - 2440587.5) * 86400, tz=timezone.utc)
-
         params = {
-            "format": "json",
-            "COMMAND": ARTEMIS2_HORIZONS_ID,
-            "OBJ_DATA": "NO",
-            "MAKE_EPHEM": "YES",
+            "format":     "json",
+            "COMMAND":    ARTEMIS2_HORIZONS_ID,
+            "OBJ_DATA":   "NO",
             "EPHEM_TYPE": "VECTORS",
-            "CENTER": "500@399",   # Geocenter
-            "REF_FRAME": "J2000",
-            "REF_SYSTEM": "ICRF",
-            "START_TIME": start_dt.strftime("%Y-%b-%d %H:%M"),
-            "STOP_TIME":  end_dt.strftime("%Y-%b-%d %H:%M"),
-            "STEP_SIZE": f"{step_min}m",
-            "VEC_TABLE": "2",      # Position + velocity
-            "CSV_FORMAT": "NO",
+            "CENTER":     "500@399",   # Earth geocenter
+            "REF_SYSTEM": "J2000",
+            "REF_PLANE":  "FRAME",
+            "OUT_UNITS":  "KM-S",
+            "START_TIME": start_time,
+            "STOP_TIME":  stop_time,
+            "STEP_SIZE":  f"{step_min}m",
+            "VEC_TABLE":  "2",         # position + velocity only
+            "CSV_FORMAT": "YES",
         }
 
-        r = requests.get(HORIZONS_API, params=params, timeout=30)
+        print(f"  GET {HORIZONS_API}")
+        print(f"  COMMAND={ARTEMIS2_HORIZONS_ID}  START={start_time}  STOP={stop_time}  STEP={step_min}m")
+        r = requests.get(HORIZONS_API, params=params, timeout=60)
         r.raise_for_status()
         result = r.json()
 
@@ -74,45 +103,112 @@ def query_horizons(start_jd: float, end_jd: float, step_min: int) -> dict | None
             print(f"  Horizons error: {result['error']}")
             return None
 
-        return parse_horizons_response(result.get("result", ""), start_jd)
+        raw = result.get("result", "")
+        return parse_horizons_csv(raw)
 
     except Exception as e:
         print(f"  Horizons query failed: {e}")
         return None
 
 
-def parse_horizons_response(text: str, start_jd: float) -> dict | None:
-    """Parse Horizons vector table output into trajectory arrays."""
+def try_load_spice():
+    try:
+        import spiceypy as spice  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def tdb_jd_to_utc_jd(jd_tdb: float) -> float:
+    import spiceypy as spice
+
+    lsk_path = download_file(NAIF_LSK_URL, KERNELS_DIR / "naif0012.tls", label="naif0012.tls")
+    spice.furnsh(str(lsk_path))
+    try:
+        et = spice.unitim(jd_tdb, "JDTDB", "ET")
+        utc_str = spice.et2utc(et, "ISOC", 3)
+        dt = datetime.strptime(utc_str, "%Y-%m-%dT%H:%M:%S.%f").replace(tzinfo=timezone.utc)
+        return dt.timestamp() / 86400.0 + 2440587.5
+    finally:
+        spice.kclear()
+
+
+def parse_horizons_csv(text: str) -> dict | None:
+    """
+    Parse Horizons CSV vector table.
+
+    Between $$SOE / $$EOE, each data line has the format:
+      JDTDB, Calendar Date (TDB), X, Y, Z, VX, VY, VZ, LT, RG, RR
+
+    Columns (0-indexed): 0=JD, 1=CalDate, 2=X, 3=Y, 4=Z, 5=VX, 6=VY, 7=VZ
+    """
     lines = text.split("\n")
     in_data = False
-    pos_eci = []
-    vel_eci = []
+    jd_list: list[float] = []
+    pos_eci: list[list[float]] = []
+    vel_eci: list[list[float]] = []
 
     for line in lines:
-        line = line.strip()
-        if line.startswith("$$SOE"):
+        stripped = line.strip()
+        if stripped.startswith("$$SOE"):
             in_data = True
             continue
-        if line.startswith("$$EOE"):
+        if stripped.startswith("$$EOE"):
             break
-        if not in_data or not line:
+        if not in_data or not stripped:
+            continue
+        # Skip header / comment lines that don't start with a number
+        if stripped.startswith("*") or stripped.startswith("C") or stripped.startswith("S"):
             continue
 
-        parts = line.split(",") if "," in line else line.split()
-        if len(parts) < 7:
+        parts = [p.strip() for p in stripped.split(",")]
+        if len(parts) < 8:
             continue
         try:
-            x, y, z = float(parts[2]), float(parts[3]), float(parts[4])
+            jd  = float(parts[0])
+            # Sanity check: valid JD for early 21st century
+            if not (2451545 < jd < 2470000):
+                continue
+            x, y, z    = float(parts[2]), float(parts[3]), float(parts[4])
             vx, vy, vz = float(parts[5]), float(parts[6]), float(parts[7])
+            jd_list.append(jd)
             pos_eci.append([round(x, 3), round(y, 3), round(z, 3)])
             vel_eci.append([round(vx, 6), round(vy, 6), round(vz, 6)])
         except (ValueError, IndexError):
             continue
 
     if not pos_eci:
+        print("  ⚠ No data records parsed — printing first 40 chars of raw response for debug:")
+        for ln in text.split("\n")[:30]:
+            print(f"    {ln}")
         return None
 
-    return {"posECI": pos_eci, "velECI": vel_eci, "count": len(pos_eci)}
+    actual_start_jd = jd_list[0]
+    actual_end_jd   = jd_list[-1]
+
+    # Compute actual step in minutes from first two JD values
+    if len(jd_list) >= 2:
+        step_days = jd_list[1] - jd_list[0]
+        actual_step_min = round(step_days * 24 * 60)
+    else:
+        actual_step_min = 5
+
+    if try_load_spice():
+        jd_list_utc = [tdb_jd_to_utc_jd(jd) for jd in jd_list]
+        actual_start_jd = jd_list_utc[0]
+        actual_end_jd = jd_list_utc[-1]
+        if len(jd_list_utc) >= 2:
+            step_days = jd_list_utc[1] - jd_list_utc[0]
+            actual_step_min = round(step_days * 24 * 60)
+
+    return {
+        "posECI": pos_eci,
+        "velECI": vel_eci,
+        "count": len(pos_eci),
+        "startJD": actual_start_jd,
+        "endJD": actual_end_jd,
+        "intervalMinutes": actual_step_min,
+    }
 
 
 def simulate_trajectory(
@@ -260,58 +356,46 @@ def simulate_trajectory(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Fetch Artemis 2 trajectory data")
-    parser.add_argument(
-        "--source", choices=["horizons", "simulated", "auto"], default="auto",
-        help="Data source: horizons, simulated, or auto (try Horizons, fallback to simulated)"
-    )
-    parser.add_argument("--launch-jd", type=float, default=LAUNCH_JD,
-                        help=f"Launch epoch as Julian Date (default: {LAUNCH_JD})")
-    parser.add_argument("--duration-days", type=float, default=MISSION_DURATION_DAYS,
-                        help=f"Mission duration in days (default: {MISSION_DURATION_DAYS})")
+    parser = argparse.ArgumentParser(description="Fetch Artemis 2 trajectory from JPL Horizons")
     parser.add_argument("--step-minutes", type=int, default=5,
                         help="Trajectory step size in minutes (default: 5)")
+    parser.add_argument("--start", default=TRAJ_START_JD,
+                        help=f"Start time JD (default: {TRAJ_START_JD})")
+    parser.add_argument("--stop",  default=TRAJ_STOP_JD,
+                        help=f"Stop time JD (default: {TRAJ_STOP_JD})")
     args = parser.parse_args()
 
     ensure_dirs()
 
-    launch_jd = args.launch_jd
-    end_jd = launch_jd + args.duration_days
+    print(f"\n{'='*60}")
+    print(f"Artemis 2 trajectory fetch — JPL Horizons ID {ARTEMIS2_HORIZONS_ID}")
+    print(f"  Start: {args.start}")
+    print(f"  Stop:  {args.stop}")
+    print(f"  Step:  {args.step_minutes} min")
+    print(f"{'='*60}")
 
-    print(f"\nFetching trajectory: {args.duration_days}d from JD {launch_jd:.2f}, step={args.step_minutes}min")
-
-    traj_data = None
-
-    if args.source in ("horizons", "auto"):
-        print("  Querying JPL Horizons ...")
-        traj_data = query_horizons(launch_jd, end_jd, args.step_minutes)
-        if traj_data:
-            print(f"  ✓ Horizons returned {traj_data['count']} points")
+    traj_data = query_horizons(args.start, args.stop, args.step_minutes)
 
     if traj_data is None:
-        if args.source == "horizons":
-            print("  Horizons query returned no data — abort (use --source simulated for fallback)")
-            sys.exit(1)
-        traj_data = simulate_trajectory(launch_jd, args.duration_days, args.step_minutes)
+        print("\n✗ Horizons returned no data. Cannot proceed without real trajectory.")
+        print("  Check that spacecraft ID -1024 has published ephemeris coverage.")
+        sys.exit(1)
 
-    # Build phase list with JD times
-    phases = []
-    for ph in PHASES:
-        phases.append({
-            "name": ph["name"],
-            "startJD": round(launch_jd + ph["startDayOffset"], 8),
-            "endJD":   round(launch_jd + ph["endDayOffset"],   8),
-            "color":   ph["color"],
-        })
+    print(f"\n  ✓ Parsed {traj_data['count']} points")
+    print(f"  JD range: {traj_data['startJD']:.6f} → {traj_data['endJD']:.6f}")
 
     output = {
-        "startJD": round(launch_jd, 8),
-        "endJD":   round(end_jd, 8),
-        "intervalMinutes": args.step_minutes,
-        "count": traj_data["count"],
-        "phases": phases,
-        "posECI": traj_data["posECI"],
-        "velECI": traj_data["velECI"],
+        "launchJD":        round(LAUNCH_JD, 9),
+        "startJD":         round(traj_data["startJD"], 9),
+        "endJD":           round(traj_data["endJD"],   9),
+        "intervalMinutes": traj_data["intervalMinutes"],
+        "count":           traj_data["count"],
+        "timeScale":       "UTC",
+        "coordinateFrame": "Earth-centered J2000/ICRF-aligned",
+        "sourceTimeScale": "JDTDB from Horizons vectors, converted to UTC-facing JD grid for app playback",
+        "phases":          PHASES,
+        "posECI":          traj_data["posECI"],
+        "velECI":          traj_data["velECI"],
     }
 
     out_path = DATA_DIR / "trajectory.json"

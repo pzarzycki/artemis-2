@@ -13,7 +13,7 @@ import argparse
 import json
 import math
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -39,9 +39,9 @@ def dt_to_jd(dt: datetime) -> float:
 
 
 def jd_to_utc_str(jd: float) -> str:
-    """Convert Julian Date to ISO UTC string for SPICE str2et."""
+    """Convert UTC Julian Date to ISO UTC string for SPICE str2et."""
     dt = datetime.fromtimestamp((jd - 2440587.5) * 86400.0, tz=timezone.utc)
-    return dt.strftime("%Y-%m-%dT%H:%M:%S")
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
 
 
 def try_load_spice() -> bool:
@@ -68,31 +68,43 @@ def compute_with_spice(
 
     moon_pos_eci = []
     sun_pos_eci = []
+    earth_pos_bcrs = []
     gmst_rad = []
     moon_orient = []
 
     step_days = step_hours / 24.0
 
+    # NAIF ID for Solar System Barycenter
+    SSB = 0
+
     for i in range(n_steps):
         jd = start_jd + i * step_days
-        et = spice.unitim(jd, "JDTDB", "ET")
+        # The sampling grid is defined in UTC-facing Julian Date for the app.
+        # Convert each UTC sample instant to SPICE ephemeris time before querying states.
+        et = spice.str2et(jd_to_utc_str(jd))
 
-        # Moon position in J2000 ECI (km)
+        # Moon position in GCRS J2000 (km) — observer = Earth center
         moon_state, _ = spice.spkez(MOON_BODY, et, "J2000", "NONE", EARTH_BODY)
         moon_pos_eci.append([round(moon_state[0], 3), round(moon_state[1], 3), round(moon_state[2], 3)])
 
-        # Sun position in J2000 ECI (km)
+        # Sun position in GCRS J2000 (km) — observer = Earth center
         sun_state, _ = spice.spkez(SUN_BODY, et, "J2000", "NONE", EARTH_BODY)
         sun_pos_eci.append([round(sun_state[0], 3), round(sun_state[1], 3), round(sun_state[2], 3)])
 
-        # GMST via SPICE frame transform (Earth rotation about Z)
-        # Get Earth body-fixed frame rotation from J2000
-        rot = spice.pxform("J2000", "ITRF93", et)
-        # GMST angle from the rotation matrix
-        gmst = math.atan2(rot[1][0], rot[0][0])
+        # Earth position in BCRS J2000 (km from Solar System Barycenter)
+        # BCRS origin = SSB (NAIF ID 0), axes = ICRF/J2000
+        # This is the vector from SSB to Earth center
+        earth_state, _ = spice.spkez(EARTH_BODY, et, "J2000", "NONE", SSB)
+        earth_pos_bcrs.append([round(earth_state[0], 3), round(earth_state[1], 3), round(earth_state[2], 3)])
+
+        # Earth body orientation about inertial +Z.
+        # pxform("J2000", "IAU_EARTH") is an inertial->body-fixed transform,
+        # so the Greenwich angle in inertial coordinates has the opposite sign.
+        rot = spice.pxform("J2000", "IAU_EARTH", et)
+        gmst = math.atan2(-rot[1][0], rot[0][0])
         if gmst < 0:
             gmst += 2 * math.pi
-        gmst_rad.append(round(gmst, 8))
+        gmst_rad.append(round(gmst, 8))  # unwrapped after loop
 
         # Moon orientation (IAU Moon body-fixed from J2000)
         # Use pxform to get Moon orientation
@@ -115,16 +127,23 @@ def compute_with_spice(
             moon_orient.append([round(pole_ra, 4), round(pole_dec, 4), round(w, 4)])
 
     spice.kclear()
+    import numpy as np
+    gmst_rad_unwrapped = np.unwrap(gmst_rad).tolist()
+    moon_w = [o[2] for o in moon_orient]
+    moon_w_unwrapped = np.degrees(np.unwrap(np.radians(moon_w))).tolist()
+    for i, o in enumerate(moon_orient):
+        moon_orient[i] = [o[0], o[1], round(moon_w_unwrapped[i], 4)]
     return {
         "moonPosECI": moon_pos_eci,
         "sunPosECI": sun_pos_eci,
-        "gmstRad": gmst_rad,
+        "earthPosBCRS": earth_pos_bcrs,
+        "gmstRad": [round(g, 8) for g in gmst_rad_unwrapped],
         "moonOrientation": moon_orient,
     }
 
 
 def compute_analytical(start_jd: float, n_steps: int, step_hours: float) -> dict:
-    """Analytical ephemeris (fallback, ~0.5° accuracy)."""
+    """Analytical ephemeris (fallback, ~0.5° accuracy). No BCRS data — requires SPICE."""
     print("  Using analytical ephemeris (no SPICE) ...")
 
     moon_pos_eci = []
@@ -138,7 +157,7 @@ def compute_analytical(start_jd: float, n_steps: int, step_hours: float) -> dict
         jd = start_jd + i * step_days
         d = jd - 2451545.0
 
-        # Moon position
+        # Moon position (GCRS, simplified)
         L = math.radians(218.316 + 13.176396 * d)
         M = math.radians(134.963 + 13.064993 * d)
         F = math.radians(93.272 + 13.229350 * d)
@@ -151,7 +170,7 @@ def compute_analytical(start_jd: float, n_steps: int, step_hours: float) -> dict
             round(dist * math.sin(lat), 3),
         ])
 
-        # Sun position
+        # Sun position (GCRS, simplified)
         g = math.radians(357.529 + 0.98560028 * d)
         q = 280.459 + 0.98564736 * d
         e_lon = math.radians(q + 1.915 * math.sin(g) + 0.020 * math.sin(2 * g))
@@ -163,13 +182,12 @@ def compute_analytical(start_jd: float, n_steps: int, step_hours: float) -> dict
             round(R * math.sin(eps) * math.sin(e_lon), 3),
         ])
 
-        # GMST (IAU 1982)
-        T = d / 36525.0
+        # GMST (IAU 1982, corrected rate)
         jd0 = math.floor(jd - 0.5) + 0.5
         H = (jd - jd0) * 24
         T0 = (jd0 - 2451545.0) / 36525.0
         gmst0 = 24110.54841 + 8640184.812866 * T0 + 0.093104 * T0**2 - 6.2e-6 * T0**3
-        gmst_sec = gmst0 + 86164.09054 * (H / 24)
+        gmst_sec = gmst0 + 86636.55536790872 * (H / 24)
         gmst = ((gmst_sec % 86400) / 86400) * 2 * math.pi
         if gmst < 0:
             gmst += 2 * math.pi
@@ -179,23 +197,26 @@ def compute_analytical(start_jd: float, n_steps: int, step_hours: float) -> dict
         e1 = math.radians(125.045 - 0.0529921 * d)
         pole_ra = 269.9949 - 3.8787 * math.sin(e1)
         pole_dec = 66.5392 + 1.5419 * math.cos(e1)
-        w = (38.3213 + 13.17635815 * d) % 360
+        w = 38.3213 + 13.17635815 * d  # unwrapped (cumulative)
         moon_orient.append([round(pole_ra, 4), round(pole_dec, 4), round(w, 4)])
 
+    import numpy as np
+    gmst_rad_unwrapped = np.unwrap(gmst_rad).tolist()
     return {
         "moonPosECI": moon_pos_eci,
         "sunPosECI": sun_pos_eci,
-        "gmstRad": gmst_rad,
+        # earthPosBCRS omitted — SPICE required for accurate heliocentric positions
+        "gmstRad": [round(g, 8) for g in gmst_rad_unwrapped],
         "moonOrientation": moon_orient,
     }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Fetch/compute Artemis 2 ephemeris data")
-    parser.add_argument("--start", default="2026-09-10",
+    parser.add_argument("--start", default="2026-04-01",
                         help="Mission window start date (YYYY-MM-DD, UTC)")
-    parser.add_argument("--days", type=float, default=18.0,
-                        help="Mission window duration in days (default: 18)")
+    parser.add_argument("--days", type=float, default=12.0,
+                        help="Mission window duration in days (default: 12, covers full Artemis 2 mission)")
     parser.add_argument("--step-hours", type=float, default=0.25,
                         help="Ephemeris step in hours (default: 0.25 = 15 min)")
     parser.add_argument("--no-spice", action="store_true",
@@ -227,6 +248,11 @@ def main() -> None:
         "startJD": round(start_jd, 8),
         "intervalHours": args.step_hours,
         "count": n_steps,
+        "timeScale": "UTC",
+        "coordinateFrame": "Earth-centered J2000/ICRF-aligned",
+        "barycentricFrame": "Solar-system-barycentric J2000/ICRF-aligned",
+        "earthRotationModel": "GMST-like angle sampled from SPICE J2000->IAU_EARTH transform",
+        "moonOrientationModel": "SPICE IAU_MOON with analytical IAU 2009 fallback",
         **data,
     }
 

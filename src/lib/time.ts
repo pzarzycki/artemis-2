@@ -38,11 +38,11 @@ export function formatMET(seconds: number): string {
 }
 
 /**
- * Artemis 2 planned launch epoch (Julian Date).
- * Placeholder — update when actual launch date is confirmed.
- * Currently set to 2026-09-15 00:00:00 UTC (notional).
+ * Artemis 2 actual launch epoch (Julian Date).
+ * Launch: April 1, 2026 22:35:12 UTC
+ * Computed: datetime(2026,4,1,22,35,12,UTC).timestamp()/86400 + 2440587.5
  */
-export const ARTEMIS2_LAUNCH_JD = toJulianDate(new Date('2026-09-15T00:00:00Z'));
+export const ARTEMIS2_LAUNCH_JD = 2461132.441111111;
 
 /** Mission Elapsed Time in seconds from launch JD */
 export function getMET(currentJD: number): number {

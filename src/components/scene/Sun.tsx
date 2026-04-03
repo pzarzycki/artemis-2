@@ -4,16 +4,16 @@ import type { Vec3 } from '../../lib/coordinates/types';
 import { normalize } from '../../lib/coordinates/transforms';
 
 interface SunProps {
-  sunPosECI: Vec3;
+  position: Vec3;
 }
 
-export default function Sun({ sunPosECI }: SunProps) {
+export default function Sun({ position }: SunProps) {
   const lightRef = useRef<THREE.DirectionalLight>(null!);
   const sphereRef = useRef<THREE.Mesh>(null!);
 
   // Very distant visual sphere for the Sun glow (never get close to it)
   const SUN_VISUAL_DIST = 40_000_000; // 40M km in scene
-  const dir = normalize(sunPosECI);
+  const dir = normalize(position);
   const sunVisualPos: [number, number, number] = [
     dir[0] * SUN_VISUAL_DIST,
     dir[1] * SUN_VISUAL_DIST,
@@ -25,7 +25,7 @@ export default function Sun({ sunPosECI }: SunProps) {
       {/* Primary directional light */}
       <directionalLight
         ref={lightRef}
-        position={sunPosECI}
+        position={position}
         intensity={1.6}
         color={0xfff5e0}
         castShadow={false}
