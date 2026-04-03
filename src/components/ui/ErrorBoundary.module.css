@@ -1,0 +1,21 @@
+.error {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  border-radius: var(--radius);
+  backdrop-filter: var(--blur);
+  color: #ff6b6b;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.icon {
+  font-size: 16px;
+}

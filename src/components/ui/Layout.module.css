@@ -41,3 +41,27 @@
   gap: 8px;
   padding: 0 16px 16px;
 }
+
+/* Tablet: stack info panel below, shrink timeline */
+@media (max-width: 768px) {
+  .sides {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 0 12px 12px;
+  }
+}
+
+/* Compact phones: hide info panel */
+@media (max-width: 480px) {
+  .sides > *:last-child {
+    display: none;
+  }
+}

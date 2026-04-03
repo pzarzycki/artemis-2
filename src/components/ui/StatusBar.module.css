@@ -92,3 +92,11 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
+
+/* Tablet: hide secondary time on small screens */
+@media (max-width: 600px) {
+  .times .divider,
+  .times .timeItem:last-child {
+    display: none;
+  }
+}

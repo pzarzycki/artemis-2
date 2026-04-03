@@ -9,6 +9,7 @@ import Spacecraft from './Spacecraft';
 import Trajectory from './Trajectory';
 import Starfield from './Starfield';
 import CameraRig from './CameraRig';
+import Atmosphere from './Atmosphere';
 import { useMissionStore } from '../../store/missionStore';
 import { useMissionTime } from '../../hooks/useMissionTime';
 import { useEphemeris } from '../../hooks/useEphemeris';
@@ -36,6 +37,7 @@ export default function Scene() {
         <Sun sunPosECI={ephemeris.sunPosECI} />
 
         <Earth gmstRad={ephemeris.gmstRad} />
+        <Atmosphere />
 
         <Moon
           posECI={ephemeris.moonPosECI}

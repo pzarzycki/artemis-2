@@ -30,9 +30,7 @@ export function useMissionTime(): MissionTimeResult {
         if (lastFrameTime.current !== null) {
           const dtMs = now - lastFrameTime.current;
           const dtDays = (dtMs / 1000) * playbackSpeed / 86_400;
-          setCurrentJD(toJulianDate(new Date()) > 0
-            ? useMissionStore.getState().currentJD + dtDays
-            : toJulianDate(new Date()));
+          setCurrentJD(useMissionStore.getState().currentJD + dtDays);
         }
         lastFrameTime.current = now;
         rafId = requestAnimationFrame(tick);
