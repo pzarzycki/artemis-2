@@ -40,3 +40,9 @@ scripts/kernels/
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent/editor scratch
+.codex
+
+# Generated diagnostic plots
+scripts/test_plots/
