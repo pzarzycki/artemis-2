@@ -20,7 +20,5 @@ export function LocalAxes({ size, visible = true }: LocalAxesProps) {
 
   useEffect(() => () => helper.dispose(), [helper]);
 
-  helper.visible = visible;
-
-  return <primitive object={helper} />;
+  return <primitive object={helper} visible={visible} />;
 }

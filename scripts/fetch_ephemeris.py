@@ -97,13 +97,22 @@ def compute_with_spice(
             gmst += 2 * math.pi
         gmst_rad.append(round(gmst, 8))  # unwrapped after loop
 
-        # Moon orientation (IAU Moon body-fixed from J2000)
-        # Use pxform to get Moon orientation
+        # Moon orientation (IAU Moon body-fixed from J2000).
+        # pxform("J2000", "IAU_MOON") returns the inertial->body-fixed rotation.
+        # In that matrix, the Moon body axes expressed in inertial coordinates are:
+        #   body +X = row 0
+        #   body +Y = row 1
+        #   body +Z = row 2
+        #
+        # The frontend consumes [poleRA, poleDec, W] using the convention
+        # body->inertial = Rz(poleRA + 90°) * Rx(90° - poleDec) * Rz(W).
+        # For this convention:
+        #   pole vector = body +Z in inertial = row 2 of the SPICE matrix
+        #   W comes from the Z components of body +X / body +Y
         moon_rot = spice.pxform("J2000", "IAU_MOON", et)
-        # Extract pole RA, Dec, W from rotation matrix.
-        pole_ra = math.degrees(math.atan2(moon_rot[0][2], -moon_rot[1][2]))
+        pole_ra = math.degrees(math.atan2(moon_rot[2][1], moon_rot[2][0]))
         pole_dec = math.degrees(math.asin(moon_rot[2][2]))
-        w = math.degrees(math.atan2(moon_rot[2][0], moon_rot[2][1]))
+        w = math.degrees(math.atan2(moon_rot[0][2], moon_rot[1][2]))
         moon_orient.append([round(pole_ra, 4), round(pole_dec, 4), round(w, 4)])
 
     spice.kclear()

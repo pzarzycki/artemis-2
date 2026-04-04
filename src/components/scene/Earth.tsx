@@ -1,5 +1,5 @@
-import { useRef, useMemo } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useMemo } from 'react';
+import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
 import { assetUrl } from '../../config/assets';
@@ -12,8 +12,6 @@ interface EarthProps {
 }
 
 export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
-  const earthRef = useRef<THREE.Mesh>(null!);
-  const cloudsRef = useRef<THREE.Mesh>(null!);
   const [dayMap, nightMap, normalMap, specMap, cloudsMap] = useLoader(TextureLoader, [
     assetUrl('assets/textures/earth_day_8k.jpg'),
     assetUrl('assets/textures/earth_night_8k.jpg'),
@@ -26,22 +24,10 @@ export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
   const emissiveColor = useMemo(() => new THREE.Color(0.8, 0.7, 0.4), []);
   const specularColor = useMemo(() => new THREE.Color(0.3, 0.3, 0.3), []);
 
-  useFrame(() => {
-    if (earthRef.current) {
-      // rotation.x = π/2: corrects sphere geometry (pole is +Y) to ECI frame (pole is +Z)
-      // rotation.z = gmstRad: Earth rotates around ECI Z (north pole)
-      // No longitude offset: texture u=0.5 (prime meridian) maps to sphere local +X = ECI +X at GMST=0
-      earthRef.current.rotation.set(Math.PI / 2, 0, gmstRad);
-    }
-    if (cloudsRef.current) {
-      cloudsRef.current.rotation.set(Math.PI / 2, 0, gmstRad * 1.002);
-    }
-  });
-
   return (
-    <group position={position}>
+    <group position={position} rotation={[0, 0, gmstRad]}>
       {/* 1 unit = 1 km, Earth radius = 6371 km */}
-      <mesh ref={earthRef}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
         <sphereGeometry args={[6371, 128, 64]} />
         <meshPhongMaterial
           map={dayMap}
@@ -53,11 +39,10 @@ export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
           specular={specularColor}
           shininess={25}
         />
-        <LocalAxes size={9000} visible={showAxes} />
       </mesh>
 
       {/* Cloud layer — slightly above surface, semi-transparent */}
-      <mesh ref={cloudsRef} renderOrder={1}>
+      <mesh renderOrder={1} rotation={[Math.PI / 2, 0, gmstRad * 0.002]}>
         <sphereGeometry args={[6371 * 1.008, 128, 64]} />
         <meshPhongMaterial
           map={cloudsMap}
@@ -69,6 +54,8 @@ export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
           side={THREE.FrontSide}
         />
       </mesh>
+
+      <LocalAxes size={9000} visible={showAxes} />
     </group>
   );
 }

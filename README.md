@@ -625,6 +625,25 @@ They are the easiest way to verify:
 - body-fixed orientation
 - synthetic spacecraft local orientation
 
+Recommended local-axis conventions:
+
+| Object | Local frame to use | `+X` | `+Y` | `+Z` | Why |
+|---|---|---|---|---|---|
+| Earth | Earth body-fixed (`IAU_EARTH` / ECEF-like) | Greenwich meridian on equator | `90°E` on equator | terrestrial north pole | Standard terrestrial convention; directly compatible with longitude mapping and Earth rotation |
+| Moon | Lunar body-fixed (`IAU_MOON`) | lunar prime meridian on equator | `90°E` lunar longitude | lunar north pole | Standard IAU/NAIF/SPICE cartographic frame |
+| Spacecraft | Synthetic flight frame unless true attitude is available | prograde (`v`) | `z × x` | orbit normal (`r × v`) | Gives all three axes a physical meaning without claiming true Orion attitude |
+
+Important nuance for Earth:
+
+- Earth local `+Z` should stay aligned with inertial world `+Z`
+- Earth local `+X/+Y` should rotate with Greenwich sidereal angle / Earth rotation angle
+- Earth local `+X/+Y` should **not** be forced to match inertial world `+X/+Y` at the start epoch unless Greenwich is intentionally redefined
+
+Important nuance for spacecraft:
+
+- trajectory alone does **not** define true spacecraft attitude
+- if real Orion attitude is unavailable, the local axes should be presented explicitly as a synthetic navigation/debug frame, not a NASA attitude product
+
 ## Data Products
 
 ### `ephemeris.json`
