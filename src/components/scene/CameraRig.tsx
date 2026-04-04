@@ -97,10 +97,35 @@ export default function CameraRig({
   const lastLockCenter = useRef<THREE.Vector3 | null>(null);
   const lastAimRequestId = useRef<number>(0);
 
+  const cancelAnimatedMove = () => {
+    animTargetPos.current = null;
+    animLookAt.current = null;
+  };
+
   useEffect(() => {
     camera.up.set(0, 0, 1);
     controlsRef.current?.update();
   }, [camera]);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    const domElement = controls.domElement;
+    if (!domElement) return;
+
+    controls.addEventListener('start', cancelAnimatedMove);
+    domElement.addEventListener('pointerdown', cancelAnimatedMove, { passive: true });
+    domElement.addEventListener('wheel', cancelAnimatedMove, { passive: true });
+    domElement.addEventListener('touchstart', cancelAnimatedMove, { passive: true });
+
+    return () => {
+      controls.removeEventListener('start', cancelAnimatedMove);
+      domElement.removeEventListener('pointerdown', cancelAnimatedMove);
+      domElement.removeEventListener('wheel', cancelAnimatedMove);
+      domElement.removeEventListener('touchstart', cancelAnimatedMove);
+    };
+  }, []);
 
   useEffect(() => {
     const targetChanged = prevTarget.current !== target;
