@@ -44,11 +44,29 @@ Three.js camera convention still matters:
 - an unrotated camera looks along `-Z`
 - screen up is a camera/view convention, not a scientific axis
 - this project explicitly sets the camera up vector to `(0, 0, 1)`
+- the camera local coordinate system is right-handed
+- local `-Z` is the viewing / optical axis
+- local `+X` is camera-right
+- local `+Y` is camera-up
 
 Therefore the rule for this app is:
 
 - the selected scientific Cartesian frame is mapped directly into the render world without handedness flips or hidden axis swaps
 - any helper indicator shown in the app must respect that same right-handed `Z-up` convention
+- camera position and world-space camera orientation vectors are reported in the currently selected scene frame
+- the camera panel reports orientation primarily as `RA/Dec` angles of the corresponding world-space direction vectors
+- those `RA/Dec` values are expressed in decimal degrees in the selected inertial frame, with Cartesian vectors available as secondary detail
+- camera direction input accepts either decimal degrees or `deg min` sexagesimal-like pairs and is converted to a unit vector before being applied
+
+## Learn Surface
+
+The in-app `Learn` dialog is intended to summarize the same contracts defined here:
+
+- render-world handedness and axis colors
+- camera local axes and world-space orientation readout
+- geocentric and barycentric inertial frames
+- Earth-fixed and Moon-fixed rotational frames
+- ephemeris/data products from SPICE, Horizons, and the celestial background map
 
 ## Primary External References
 
@@ -68,6 +86,8 @@ These are the authoritative external references used for the scientific model in
   https://svs.gsfc.nasa.gov/4720
 - NASA Science, Artemis II lunar science operations:
   https://science.nasa.gov/solar-system/nasas-artemis-ii-lunar-science-operations-to-inform-future-missions/
+- NASA SVS Deep Star Maps 2020:
+  https://svs.gsfc.nasa.gov/4851
 
 ## Scientific Model
 
@@ -205,6 +225,29 @@ What the app uses this vector for:
 - day/night illumination direction on Earth and Moon
 
 Those three uses must always come from the same Sun vector.
+
+## 2.1 Celestial Background
+
+The night-sky background must use a celestial map whose coordinates are aligned with the same inertial axes as the rest of the scene.
+
+Authoritative source used here:
+
+- NASA SVS Deep Star Maps 2020 celestial map
+
+NASA states that this map uses:
+
+- plate carrée projection
+- celestial `ICRF/J2000` geocentric right ascension and declination
+- map center at `0h` right ascension
+- right ascension increasing to the left
+
+App mapping rule:
+
+- world `+X` = `RA 0h`, `Dec 0°`
+- world `+Y` = `RA 6h`, `Dec 0°`
+- world `+Z` = north celestial pole
+
+Because the NASA map has right ascension increasing to the left, the texture must be mirrored horizontally when applied to the inside of the sky sphere so that increasing right ascension matches the app's right-handed `+X/+Y/+Z` world convention.
 
 ## 3. Moon Position and Orientation
 

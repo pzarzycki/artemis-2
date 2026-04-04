@@ -1,36 +1,128 @@
 import { useMissionTime } from '../../hooks/useMissionTime';
 import { useMissionStore } from '../../store/missionStore';
+import ArtemisLogo from './ArtemisLogo';
+import LearnDialog from './LearnDialog';
+import SettingsDialog from './SettingsDialog';
 import styles from './StatusBar.module.css';
+
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.actionIcon} aria-hidden="true">
+      <path d="M6.8 8.5v8.7M6.8 5.9a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8ZM10.7 8.5v8.7m0-4.8c0-2.1 1.1-3.9 3.2-3.9 1.8 0 2.8 1.2 2.8 3.5v5.2" />
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.actionIcon} aria-hidden="true">
+      <path d="M6 5.5l12 13M18 5.5l-4.4 4.8M10.3 13.9 6 18.5" />
+    </svg>
+  );
+}
+
+function GitHubIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.actionIcon} aria-hidden="true">
+      <path d="M9.1 18.6c-3 .9-3-1.5-4.2-1.8m8.4 3.6v-2.4c0-.7 0-1.3-.3-1.8 2.8-.3 5.8-1.4 5.8-6.3 0-1.4-.5-2.5-1.3-3.4.1-.3.6-1.6-.1-3.3 0 0-1.1-.3-3.6 1.3a12 12 0 0 0-6.6 0C4.7 2.9 3.6 3.2 3.6 3.2c-.7 1.7-.2 3-.1 3.3A4.9 4.9 0 0 0 2.2 10c0 4.9 3 6 5.8 6.3-.2.5-.3 1-.3 1.8v2.4" />
+    </svg>
+  );
+}
 
 export default function StatusBar() {
   const { utcString, metString } = useMissionTime();
   const mode = useMissionStore((s) => s.mode);
+  const activeDialog = useMissionStore((s) => s.activeDialog);
+  const openDialog = useMissionStore((s) => s.openDialog);
+  const closeDialog = useMissionStore((s) => s.closeDialog);
+
+  const sourceUrl = import.meta.env.VITE_SOURCE_URL as string | undefined;
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const shareText = encodeURIComponent('Artemis II tracker');
+  const shareUrl = encodeURIComponent(currentUrl);
+
+  const openExternal = (url: string) => {
+    if (typeof window === 'undefined') return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   return (
-    <div className={styles.bar}>
-      <div className={styles.mission}>
-        <span className={styles.logo}>◈</span>
-        <span className={styles.name}>ARTEMIS II</span>
-      </div>
-      <div className={styles.times}>
-        <div className={styles.timeItem}>
-          <span className={styles.label}>UTC</span>
-          <span className={`${styles.value} mono`}>{utcString}</span>
+    <>
+      <div className={styles.bar}>
+        <div className={styles.mission}>
+          <ArtemisLogo size={28} />
+          <span className={styles.name}>ARTEMIS II</span>
         </div>
-        <div className={styles.divider} />
-        <div className={styles.timeItem}>
-          <span className={styles.label}>MET</span>
-          <span className={`${styles.value} mono`}>{metString}</span>
+        <div className={styles.times}>
+          <div className={styles.timeItem}>
+            <span className={styles.label}>UTC</span>
+            <span className={`${styles.value} mono`}>{utcString}</span>
+          </div>
+          <div className={styles.divider} />
+          <div className={styles.timeItem}>
+            <span className={styles.label}>MET</span>
+            <span className={`${styles.value} mono`}>{metString}</span>
+          </div>
+          {mode === 'live' && (
+            <span className={styles.liveBadge}>
+              <span className={styles.liveDot} />
+              LIVE
+            </span>
+          )}
+        </div>
+        <div className={styles.status}>
+          <button
+            type="button"
+            className={`${styles.learnBtn} ${styles.tooltipButton}`}
+            data-tooltip="Open Learn reference"
+            onClick={() => openDialog('learn', 'world')}
+            aria-label="Open Learn reference"
+          >
+            <span>Learn</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.learnBtn} ${styles.tooltipButton}`}
+            data-tooltip="Open scene settings"
+            onClick={() => openDialog('settings')}
+            aria-label="Open scene settings"
+          >
+            <span>Settings</span>
+          </button>
+          <div className={styles.shareGroup}>
+            <button
+              type="button"
+              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              onClick={() => openExternal(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`)}
+              aria-label="Share on LinkedIn"
+              data-tooltip="Share on LinkedIn"
+            >
+              <LinkedInIcon />
+            </button>
+            <button
+              type="button"
+              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              onClick={() => openExternal(`https://x.com/intent/post?text=${shareText}&url=${shareUrl}`)}
+              aria-label="Share on X"
+              data-tooltip="Share on X"
+            >
+              <XIcon />
+            </button>
+            <button
+              type="button"
+              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              onClick={() => sourceUrl && openExternal(sourceUrl)}
+              aria-label="Open source code"
+              data-tooltip={sourceUrl ? 'Open source code' : 'Source URL not configured'}
+              disabled={!sourceUrl}
+            >
+              <GitHubIcon />
+            </button>
+          </div>
         </div>
       </div>
-      <div className={styles.status}>
-        {mode === 'live' && (
-          <span className={styles.liveBadge}>
-            <span className={styles.liveDot} />
-            LIVE
-          </span>
-        )}
-      </div>
-    </div>
+      {activeDialog === 'learn' && <LearnDialog onClose={closeDialog} />}
+      {activeDialog === 'settings' && <SettingsDialog onClose={closeDialog} />}
+    </>
   );
 }

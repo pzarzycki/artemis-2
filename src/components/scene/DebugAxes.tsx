@@ -3,9 +3,10 @@ import * as THREE from 'three';
 
 interface LocalAxesProps {
   size: number;
+  visible?: boolean;
 }
 
-export function LocalAxes({ size }: LocalAxesProps) {
+export function LocalAxes({ size, visible = true }: LocalAxesProps) {
   const helper = useMemo(() => {
     const axes = new THREE.AxesHelper(size);
     const materials = Array.isArray(axes.material) ? axes.material : [axes.material];
@@ -18,6 +19,8 @@ export function LocalAxes({ size }: LocalAxesProps) {
   }, [size]);
 
   useEffect(() => () => helper.dispose(), [helper]);
+
+  helper.visible = visible;
 
   return <primitive object={helper} />;
 }

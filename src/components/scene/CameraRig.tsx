@@ -4,6 +4,7 @@ import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import type { CameraTarget, ReferenceFrame } from '../../store/missionStore';
+import { useMissionStore } from '../../store/missionStore';
 import type { Vec3 } from '../../lib/coordinates/types';
 import { EARTH_RADIUS_KM, MOON_RADIUS_KM } from '../../lib/ephemeris/constants';
 
@@ -94,6 +95,7 @@ export default function CameraRig({
   const prevTarget = useRef<CameraTarget | null>(null);
   const prevFrame = useRef<ReferenceFrame | null>(null);
   const lastLockCenter = useRef<THREE.Vector3 | null>(null);
+  const lastAimRequestId = useRef<number>(0);
 
   useEffect(() => {
     camera.up.set(0, 0, 1);
@@ -121,6 +123,20 @@ export default function CameraRig({
   useFrame(() => {
     const controls = controlsRef.current;
     if (!controls) return;
+
+    const store = useMissionStore.getState();
+    if (store.cameraAimDirection && store.cameraAimRequestId !== lastAimRequestId.current) {
+      const dir = new THREE.Vector3(...store.cameraAimDirection);
+      if (dir.lengthSq() > 0) {
+        dir.normalize();
+        const distance = Math.max(1, camera.position.distanceTo(controls.target));
+        controls.target.copy(camera.position.clone().add(dir.multiplyScalar(distance)));
+        controls.update();
+        animTargetPos.current = null;
+        animLookAt.current = null;
+      }
+      lastAimRequestId.current = store.cameraAimRequestId;
+    }
 
     if (animTargetPos.current && animLookAt.current) {
       camera.position.lerp(animTargetPos.current, LERP_SPEED);

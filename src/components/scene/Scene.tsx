@@ -1,7 +1,8 @@
 import { Suspense, useEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { KernelSize } from 'postprocessing';
+import * as THREE from 'three';
 import Earth from './Earth';
 import Moon from './Moon';
 import Sun from './Sun';
@@ -9,6 +10,7 @@ import Spacecraft from './Spacecraft';
 import Trajectory from './Trajectory';
 import CameraRig from './CameraRig';
 import WorldHud from './WorldHud';
+import CelestialBackground from './CelestialBackground';
 import { useMissionStore } from '../../store/missionStore';
 import { useSceneModel } from '../../hooks/useSceneModel';
 
@@ -30,8 +32,30 @@ function DebugOverlay() {
   return null;
 }
 
+function CameraTelemetry() {
+  const camera = useThree((state) => state.camera);
+
+  useFrame(() => {
+    const forward = new THREE.Vector3();
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+    camera.getWorldDirection(forward);
+    useMissionStore.getState().setCameraTelemetry(
+      [camera.position.x, camera.position.y, camera.position.z],
+      [forward.x, forward.y, forward.z],
+      [up.x, up.y, up.z],
+    );
+  });
+
+  return null;
+}
+
 export default function Scene() {
   const cameraTarget = useMissionStore((s) => s.cameraTarget);
+  const showStars = useMissionStore((s) => s.showStars);
+  const showObjectAxes = useMissionStore((s) => s.showObjectAxes);
+  const showTrajectory = useMissionStore((s) => s.showTrajectory);
+  const ambientLightIntensity = useMissionStore((s) => s.ambientLightIntensity);
+  const bloomIntensity = useMissionStore((s) => s.bloomIntensity);
   const scene = useSceneModel();
 
   return (
@@ -46,18 +70,21 @@ export default function Scene() {
       }}
     >
       <DebugOverlay />
+      <CameraTelemetry />
       <Suspense fallback={null}>
-        <ambientLight intensity={0.03} />
+        {showStars && <CelestialBackground />}
+        <ambientLight intensity={ambientLightIntensity} />
         <Sun position={scene.sunWorld} />
-        <Earth position={scene.earthWorld} gmstRad={scene.gmstRad} />
+        <Earth position={scene.earthWorld} gmstRad={scene.gmstRad} showAxes={showObjectAxes} />
         <Moon
           position={scene.moonWorld}
           orientation={scene.moonOrientation}
+          showAxes={showObjectAxes}
         />
         {scene.spacecraftWorld && scene.spacecraftVelECI && (
-          <Spacecraft position={scene.spacecraftWorld} velECI={scene.spacecraftVelECI} />
+          <Spacecraft position={scene.spacecraftWorld} velECI={scene.spacecraftVelECI} showAxes={showObjectAxes} />
         )}
-        {scene.trajectory && (
+        {showTrajectory && scene.trajectory && (
           <Trajectory
             trajectory={scene.trajectory}
             currentJD={scene.julianDate}
@@ -81,7 +108,7 @@ export default function Scene() {
           kernelSize={KernelSize.LARGE}
           luminanceThreshold={0.82}
           luminanceSmoothing={0.7}
-          intensity={0.6}
+          intensity={bloomIntensity}
         />
       </EffectComposer>
     </Canvas>

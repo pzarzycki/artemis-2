@@ -7,9 +7,10 @@ import { LocalAxes } from './DebugAxes';
 interface EarthProps {
   position: [number, number, number];
   gmstRad: number;
+  showAxes: boolean;
 }
 
-export default function Earth({ position, gmstRad }: EarthProps) {
+export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
   const earthRef = useRef<THREE.Mesh>(null!);
   const cloudsRef = useRef<THREE.Mesh>(null!);
   const [dayMap, nightMap, normalMap, specMap, cloudsMap] = useLoader(TextureLoader, [
@@ -51,7 +52,7 @@ export default function Earth({ position, gmstRad }: EarthProps) {
           specular={specularColor}
           shininess={25}
         />
-        <LocalAxes size={9000} />
+        <LocalAxes size={9000} visible={showAxes} />
       </mesh>
 
       {/* Cloud layer — slightly above surface, semi-transparent */}

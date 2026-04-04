@@ -7,9 +7,10 @@ import { LocalAxes } from './DebugAxes';
 interface SpacecraftProps {
   position: Vec3;
   velECI: Vec3;
+  showAxes: boolean;
 }
 
-export default function Spacecraft({ position, velECI }: SpacecraftProps) {
+export default function Spacecraft({ position, velECI, showAxes }: SpacecraftProps) {
   const groupRef = useRef<THREE.Group>(null!);
 
   const SCALE = 300; // 300 km visual size (exaggerated; Orion is ~5m real)
@@ -62,7 +63,7 @@ export default function Spacecraft({ position, velECI }: SpacecraftProps) {
           toneMapped={false}
         />
       </mesh>
-      <LocalAxes size={SCALE * 2.2} />
+      <LocalAxes size={SCALE * 2.2} visible={showAxes} />
     </group>
   );
 }

@@ -8,9 +8,10 @@ import { LocalAxes } from './DebugAxes';
 interface MoonProps {
   position: Vec3;
   orientation: [number, number, number]; // [poleRA_deg, poleDec_deg, W_deg]
+  showAxes: boolean;
 }
 
-export default function Moon({ position, orientation }: MoonProps) {
+export default function Moon({ position, orientation, showAxes }: MoonProps) {
   const [albedoMap, normalMap] = useLoader(TextureLoader, [
     '/textures/moon_8k.jpg',
     '/textures/moon_normal_8k.jpg',
@@ -32,7 +33,7 @@ export default function Moon({ position, orientation }: MoonProps) {
         roughness={0.95}
         metalness={0.0}
       />
-      <LocalAxes size={2600} />
+      <LocalAxes size={2600} visible={showAxes} />
     </mesh>
   );
 }

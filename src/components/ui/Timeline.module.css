@@ -1,15 +1,58 @@
 .timeline {
   flex: 1;
+  min-width: 0;
   padding: 10px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .controls {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modeToggle {
+  display: flex;
+  padding: 4px;
+  gap: 2px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.modeToggleBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.modeToggleBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+.activeMode {
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
+.modeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.5s infinite;
 }
 
 .playBtn {
@@ -23,15 +66,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
-}
-.playBtn:hover {
-  background: rgba(0, 212, 170, 0.25);
 }
 
 .speeds {
   display: flex;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .speedBtn {
@@ -43,10 +83,12 @@
   font-size: 11px;
   transition: all 0.15s;
 }
+
 .speedBtn:hover {
   border-color: var(--accent-dim);
   color: var(--text-primary);
 }
+
 .speedBtn.active {
   border-color: var(--accent);
   color: var(--accent);
@@ -54,13 +96,52 @@
 }
 
 .scrubArea {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0 10px;
+}
+
+.phaseLabels {
   position: relative;
-  height: 28px;
+  height: 12px;
+}
+
+.phaseLabel {
+  position: absolute;
+  top: 0;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.track {
+  position: relative;
+  height: 18px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.trackBase {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  background: var(--border);
+  border-radius: 2px;
 }
 
 .phaseBands {
   position: absolute;
-  inset: 6px 0;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 12px;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -71,54 +152,31 @@
   border-radius: 2px;
 }
 
-.phaseLabels {
-  position: absolute;
-  top: -14px;
-  left: 0;
-  right: 0;
-  pointer-events: none;
-}
-
-.phaseLabel {
-  position: absolute;
-  font-size: 9px;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  transform: translateX(-50%);
-  white-space: nowrap;
-}
-
-.slider {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 2;
-  margin: 0;
-}
-
 .progressFill {
   position: absolute;
-  top: 50%;
   left: 0;
+  right: 0;
+  top: 50%;
   height: 3px;
-  transform: translateY(-50%);
+  transform-origin: left center;
   background: var(--accent);
   border-radius: 2px;
   pointer-events: none;
 }
 
-/* Track styling */
-.scrubArea::before {
-  content: '';
+.thumb {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  transform: translateY(-50%);
-  background: var(--border);
-  border-radius: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.16);
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }

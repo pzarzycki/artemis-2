@@ -17,11 +17,6 @@
   flex-shrink: 0;
 }
 
-.logo {
-  color: var(--accent);
-  font-size: 18px;
-}
-
 .name {
   font-size: 13px;
   font-weight: 700;
@@ -63,7 +58,90 @@
 
 .status {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
+}
+
+.learnBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+
+.shareGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shareBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.shareBtn:disabled {
+  opacity: 0.5;
+}
+
+.actionIcon {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tooltipButton {
+  position: relative;
+}
+
+.tooltipButton::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 150px;
+  max-width: 220px;
+  padding: 7px 9px;
+  border: 1px solid rgba(182, 225, 255, 0.18);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(20, 29, 48, 0.98), rgba(12, 18, 31, 0.97));
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+  color: var(--text-primary);
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 20;
+}
+
+.tooltipButton:hover::after,
+.tooltipButton:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .liveBadge {
