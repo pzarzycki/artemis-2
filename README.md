@@ -7,9 +7,6 @@
 
 Scientific WebGL mission viewer for Artemis II, with explicit handling of inertial frames, body-fixed orientations, sky-map registration, and mission timeline playback.
 
-**Live site:** https://pzarzycki.github.io/artemis-2/  
-**Source:** https://github.com/pzarzycki/artemis-2
-
 `react` `three.js` `webgl` `nasa horizons` `spice` `de440` `gcrs` `bcrs` `icrs` `mission visualization`
 
 This README is the project specification and project-facing repository guide. It defines:
@@ -95,7 +92,7 @@ uv run python scripts/download_starmaps.py 4k
 
 The Docker build performs the same download step during image build, so the runtime image remains self-contained even though the EXRs are not tracked in the repository.
 
-## What This Project Represents
+## Scale and Design Goals
 
 The scene scale is:
 
@@ -171,8 +168,6 @@ These are the authoritative external references used for the scientific model in
   https://science.nasa.gov/solar-system/nasas-artemis-ii-lunar-science-operations-to-inform-future-missions/
 - NASA SVS Deep Star Maps 2020:
   https://svs.gsfc.nasa.gov/4851
-
-## Scientific Model
 
 ## 1. Main World Coordinate System
 
@@ -309,7 +304,7 @@ What the app uses this vector for:
 
 Those three uses must always come from the same Sun vector.
 
-## 2.1 Celestial Background
+### 2.1 Celestial Background
 
 The night-sky background must use a celestial map whose coordinates are aligned with the same inertial axes as the rest of the scene.
 
@@ -676,7 +671,7 @@ Current known deviations in this repo:
 - Earth geographic outputs are spherical, not geodetic
 - Earth texture zero-meridian registration is still assumed by the current pipeline rather than fully proven from source metadata
 
-## Summary Answers To The Original 5 Questions
+## Scientific Model Summary
 
 ### 1. Main coordinate system
 
