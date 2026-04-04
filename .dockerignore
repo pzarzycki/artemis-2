@@ -4,5 +4,6 @@
 .venv
 dist
 node_modules
+public/starmaps
 scripts/kernels
 scripts/test_plots

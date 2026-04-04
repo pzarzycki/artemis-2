@@ -6,6 +6,7 @@ import InfoPanel from './InfoPanel';
 import CameraPresets from './CameraPresets';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingOverlay from './LoadingOverlay';
+import AssetLoadingOverlay from './AssetLoadingOverlay';
 import FrameSelector from './FrameSelector';
 import SceneControls from './SceneControls';
 import CameraPanel from './CameraPanel';
@@ -19,6 +20,7 @@ export default function Layout() {
           <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" />}>
             <Scene />
           </Suspense>
+          <AssetLoadingOverlay />
         </div>
       </ErrorBoundary>
       <div className={styles.hud}>

@@ -48,60 +48,9 @@ export default function StatusBar() {
   return (
     <>
       <div className={styles.bar}>
-        <div className={styles.left}>
-          <div className={styles.mission}>
-            <ArtemisLogo size={28} />
-            <span className={styles.name}>ARTEMIS II</span>
-          </div>
-          <div className={styles.menu}>
-            <button
-              type="button"
-              className={`${styles.learnBtn} ${styles.tooltipButton}`}
-              data-tooltip="Open Learn reference"
-              onClick={() => openDialog('learn', 'world')}
-              aria-label="Open Learn reference"
-            >
-              <span>Learn</span>
-            </button>
-            <button
-              type="button"
-              className={`${styles.learnBtn} ${styles.tooltipButton}`}
-              data-tooltip="Open scene settings"
-              onClick={() => openDialog('settings')}
-              aria-label="Open scene settings"
-            >
-              <span>Settings</span>
-            </button>
-            <div className={styles.shareGroup}>
-              <button
-                type="button"
-                className={`${styles.shareBtn} ${styles.tooltipButton}`}
-                onClick={() => openExternal(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`)}
-                aria-label="Share on LinkedIn"
-                data-tooltip="Share the live mission viewer on LinkedIn"
-              >
-                <LinkedInIcon />
-              </button>
-              <button
-                type="button"
-                className={`${styles.shareBtn} ${styles.tooltipButton}`}
-                onClick={() => openExternal(`https://x.com/intent/post?text=${shareText}&url=${shareUrl}`)}
-                aria-label="Share on X"
-                data-tooltip="Share the live mission viewer on X"
-              >
-                <XIcon />
-              </button>
-              <button
-                type="button"
-                className={`${styles.shareBtn} ${styles.tooltipButton}`}
-                onClick={() => openExternal(projectConfig.sourceUrl)}
-                aria-label="Open source code"
-                data-tooltip="See source on GitHub"
-              >
-                <GitHubIcon />
-              </button>
-            </div>
-          </div>
+        <div className={styles.mission}>
+          <ArtemisLogo size={28} />
+          <span className={styles.name}>ARTEMIS II</span>
         </div>
         <div className={styles.times}>
           <div className={styles.timeItem}>
@@ -119,6 +68,55 @@ export default function StatusBar() {
               LIVE
             </span>
           )}
+        </div>
+        <div className={styles.status}>
+          <button
+            type="button"
+            className={`${styles.learnBtn} ${styles.tooltipButton}`}
+            data-tooltip="Open Learn reference"
+            onClick={() => openDialog('learn', 'world')}
+            aria-label="Open Learn reference"
+          >
+            <span>Learn</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.learnBtn} ${styles.tooltipButton}`}
+            data-tooltip="Open scene settings"
+            onClick={() => openDialog('settings')}
+            aria-label="Open scene settings"
+          >
+            <span>Settings</span>
+          </button>
+          <div className={styles.shareGroup}>
+            <button
+              type="button"
+              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              onClick={() => openExternal(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`)}
+              aria-label="Share on LinkedIn"
+              data-tooltip="Share the live mission viewer on LinkedIn"
+            >
+              <LinkedInIcon />
+            </button>
+            <button
+              type="button"
+              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              onClick={() => openExternal(`https://x.com/intent/post?text=${shareText}&url=${shareUrl}`)}
+              aria-label="Share on X"
+              data-tooltip="Share the live mission viewer on X"
+            >
+              <XIcon />
+            </button>
+            <button
+              type="button"
+              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              onClick={() => openExternal(projectConfig.sourceUrl)}
+              aria-label="Open source code"
+              data-tooltip="See source on GitHub"
+            >
+              <GitHubIcon />
+            </button>
+          </div>
         </div>
       </div>
       {activeDialog === 'learn' && <LearnDialog onClose={closeDialog} />}

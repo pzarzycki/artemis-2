@@ -73,6 +73,28 @@ For local development the app still runs at:
 - `http://localhost:5173/`
 - server bind: `0.0.0.0:5173`
 
+## Large Asset Policy
+
+Large star-map EXR files are **not** kept in git.
+
+- local cache directory: [`public/starmaps/`](./public/starmaps/)
+- supported resolutions: `4k`, `8k`, `16k`
+- default runtime selection: `4k`
+
+For local development, download the required sky maps with:
+
+```bash
+uv run python scripts/download_starmaps.py
+```
+
+To download only one resolution:
+
+```bash
+uv run python scripts/download_starmaps.py 4k
+```
+
+The Docker build performs the same download step during image build, so the runtime image remains self-contained even though the EXRs are not tracked in the repository.
+
 ## What This Project Represents
 
 The scene scale is:

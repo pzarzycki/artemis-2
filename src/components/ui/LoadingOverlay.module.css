@@ -10,6 +10,10 @@
   z-index: 100;
 }
 
+.nonBlocking {
+  pointer-events: none;
+}
+
 .spinner {
   width: 36px;
   height: 36px;

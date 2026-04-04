@@ -14,6 +14,7 @@ dist-ssr
 
 # Generated data (run scripts/ to regenerate)
 public/textures/
+public/starmaps/
 public/data/
 
 # Python / uv

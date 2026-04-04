@@ -1,30 +1,77 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { useFrame, useLoader, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { useMissionStore } from '../../store/missionStore';
+import { getStarMapPath, type StarMapResolution } from '../../config/starmaps';
 
 const SKY_RADIUS_KM = 800_000_000;
+const loader = new EXRLoader();
+const textureCache = new Map<StarMapResolution, THREE.DataTexture>();
+const pendingTextureLoads = new Map<StarMapResolution, Promise<THREE.DataTexture>>();
+
+async function loadStarMapTexture(resolution: StarMapResolution) {
+  const cached = textureCache.get(resolution);
+  if (cached) return cached;
+
+  const pending = pendingTextureLoads.get(resolution);
+  if (pending) return pending;
+
+  const promise = loader.loadAsync(getStarMapPath(resolution)).then((loaded) => {
+    loaded.wrapS = THREE.RepeatWrapping;
+    loaded.wrapT = THREE.ClampToEdgeWrapping;
+    loaded.repeat.x = -1;
+    loaded.repeat.y = 1;
+    loaded.offset.x = 1;
+    loaded.offset.y = 0;
+    loaded.colorSpace = THREE.LinearSRGBColorSpace;
+    loaded.needsUpdate = true;
+    textureCache.set(resolution, loaded);
+    pendingTextureLoads.delete(resolution);
+    return loaded;
+  });
+
+  pendingTextureLoads.set(resolution, promise);
+  return promise;
+}
 
 export default function CelestialBackground() {
   const meshRef = useRef<THREE.Mesh>(null);
   const camera = useThree((state) => state.camera);
   const skyExposure = useMissionStore((state) => state.skyExposure);
-  const texture = useLoader(EXRLoader, '/textures/starmap_2020_4k.exr');
+  const starMapResolution = useMissionStore((state) => state.starMapResolution);
+  const setStarMapLoading = useMissionStore((state) => state.setStarMapLoading);
+  const [texture, setTexture] = useState<THREE.DataTexture | null>(null);
 
   useEffect(() => {
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.repeat.x = -1;
-    texture.repeat.y = 1;
-    texture.offset.x = 1;
-    texture.offset.y = 0;
-    texture.colorSpace = THREE.LinearSRGBColorSpace;
-    texture.needsUpdate = true;
-  }, [texture]);
+    let isActive = true;
+    setStarMapLoading(true);
 
-  const material = useMemo(() => (
-    new THREE.ShaderMaterial({
+    loadStarMapTexture(starMapResolution)
+      .then((loaded) => {
+        if (!isActive) return;
+        setTexture((previous) => {
+          if (previous === loaded) return previous;
+          return loaded;
+        });
+        setStarMapLoading(false);
+      })
+      .catch((error) => {
+        console.warn(`[Sky] Failed to load ${getStarMapPath(starMapResolution)}`, error);
+        if (isActive) {
+          setStarMapLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+      setStarMapLoading(false);
+    };
+  }, [setStarMapLoading, starMapResolution]);
+
+  const material = useMemo(() => {
+    if (!texture) return null;
+    return new THREE.ShaderMaterial({
       uniforms: {
         skyMap: { value: texture },
         exposure: { value: skyExposure },
@@ -53,15 +100,19 @@ export default function CelestialBackground() {
       toneMapped: false,
       depthWrite: false,
       depthTest: false,
-    })
-  ), [skyExposure, texture]);
+    });
+  }, [skyExposure, texture]);
 
-  useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => {
+    material?.dispose();
+  }, [material]);
 
   useFrame(() => {
     if (!meshRef.current) return;
     meshRef.current.position.copy(camera.position);
   });
+
+  if (!material) return null;
 
   return (
     <mesh

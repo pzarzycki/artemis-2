@@ -36,6 +36,7 @@ jobs:
             VITE_BASE_PATH=/artemis-2/
             VITE_APP_URL=https://pzarzycki.github.io/artemis-2/
             VITE_SOURCE_URL=https://github.com/pzarzycki/artemis-2
+            STAR_MAP_RESOLUTIONS=4k 8k 16k
 
       - name: Extract dist artifact from image
         run: |

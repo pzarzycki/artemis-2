@@ -10,26 +10,11 @@
   -webkit-backdrop-filter: var(--blur);
 }
 
-.left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-  min-width: 0;
-}
-
 .mission {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-}
-
-.menu {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
 }
 
 .name {
@@ -42,10 +27,8 @@
 .times {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 16px;
-  flex: 0 0 auto;
-  flex-shrink: 0;
+  flex: 1;
 }
 
 .learnBtn {
@@ -85,6 +68,14 @@
   width: 1px;
   height: 18px;
   background: var(--border);
+}
+
+.status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .shareGroup {
