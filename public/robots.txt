@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pzarzycki.github.io/artemis-2/sitemap.xml
