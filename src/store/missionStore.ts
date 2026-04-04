@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { toJulianDate } from '../lib/time';
+import { getDefaultMissionJD } from '../lib/time';
 import type { Vec3 } from '../lib/coordinates/types';
 import type { StarMapResolution } from '../config/starmaps';
 
@@ -54,7 +54,7 @@ interface MissionState {
 }
 
 export const useMissionStore = create<MissionState>((set) => ({
-  currentJD: toJulianDate(new Date()),
+  currentJD: getDefaultMissionJD(),
   mode: 'live',
   playbackSpeed: 60,
   isPlaying: false,
@@ -80,7 +80,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   setMode: (mode) =>
     set((state) => ({
       mode,
-      currentJD: mode === 'live' ? toJulianDate(new Date()) : state.currentJD,
+      currentJD: mode === 'live' ? getDefaultMissionJD() : state.currentJD,
       isPlaying: mode === 'scrub' ? state.isPlaying : false,
     })),
   setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),

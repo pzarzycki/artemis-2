@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT / "public" / "data"
+DATA_DIR = ROOT / "public" / "assets" / "data"
 MOON_RADIUS_KM = 1737.4
 
 

@@ -14,30 +14,32 @@ import styles from './Layout.module.css';
 
 export default function Layout() {
   return (
-    <div className={styles.root}>
-      <ErrorBoundary>
-        <div className={styles.canvas}>
-          <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" sceneOnly />}>
-            <Scene />
-          </Suspense>
-          <AssetLoadingOverlay />
-        </div>
-      </ErrorBoundary>
-      <div className={styles.hud}>
-        <StatusBar />
-        <CameraPanel />
-        <div className={styles.sides}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <CameraPresets />
-            <FrameSelector />
-            <SceneControls />
+    <Suspense fallback={<LoadingOverlay message="Loading mission data…" />}>
+      <div className={styles.root}>
+        <ErrorBoundary>
+          <div className={styles.canvas}>
+            <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" sceneOnly />}>
+              <Scene />
+            </Suspense>
+            <AssetLoadingOverlay />
           </div>
-          <InfoPanel />
-        </div>
-        <div className={styles.bottom}>
-          <Timeline />
+        </ErrorBoundary>
+        <div className={styles.hud}>
+          <StatusBar />
+          <CameraPanel />
+          <div className={styles.sides}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <CameraPresets />
+              <FrameSelector />
+              <SceneControls />
+            </div>
+            <InfoPanel />
+          </div>
+          <div className={styles.bottom}>
+            <Timeline />
+          </div>
         </div>
       </div>
-    </div>
+    </Suspense>
   );
 }

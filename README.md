@@ -7,6 +7,8 @@
 
 Real-time 3D mission tracker for NASA's Artemis II lunar flyby, built with React + Three.js using GCRS/BCRS/ICRS reference frames, ephemeris data from JPL Horizons and SPICE DE440, and a registered celestial sky map.
 
+**Launched:** April 1, 2026 · **Orion capsule:** *Integrity* · **JPL Horizons / NAIF ID:** `-1024`
+
 **[▶ Open live viewer](https://pzarzycki.github.io/artemis-2/)**
 
 ![Artemis II viewer screenshot](docs/img/artemis-2-viewer-scr.png)
@@ -272,7 +274,7 @@ That is adequate for visualization, but it is not a geodetic Earth model.
 The Sun vector in the default scene is defined as:
 
 - Sun center relative to Earth center
-- expressed in practical `J2000` / `ICRF`-aligned coordinates
+- expressed in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
 - units in kilometers
 
 Primary source:
@@ -325,19 +327,26 @@ Because the NASA map has right ascension increasing to the left, the texture mus
 The Moon vector in the default scene is defined as:
 
 - Moon center relative to Earth center
-- expressed in practical `J2000` / `ICRF`-aligned coordinates
+- expressed in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
 - units in kilometers
 
 Primary source:
 
-- SPICE `DE440`
-- obtained in the pipeline with target `Moon`, observer `Earth center`, frame `"J2000"`
+- local SPICE computation via `spkez(MOON, et, "J2000", "NONE", EARTH)`
+- script: `scripts/fetch_ephemeris.py`
+
+Moon position is **not** fetched from Horizons.
 
 Meaning:
 
 - this is a geocentric inertial Moon state
 - it is not Earth-Moon barycenter relative
 - it is not Solar System barycenter relative
+
+External verification:
+
+- the generated Moon state was checked against official JPL Horizons Moon vectors using the same Earth-centered `J2000` / `ICRF`-aligned setup
+- agreement was about `0.002 km` at the verified epoch
 
 ### 3.2 Moon orientation
 
@@ -346,18 +355,9 @@ It is determined by a lunar body-fixed rotational model.
 
 The intended lunar orientation model is:
 
-- IAU lunar pole and prime meridian convention
-
-Primary source:
-
-- SPICE `IAU_MOON` body-fixed frame, if available from the loaded kernel set
-
-Fallback analytical source:
-
-- IAU 2009 lunar orientation expressions for:
-  - pole right ascension
-  - pole declination
-  - prime meridian angle `W`
+- IAU lunar pole and prime meridian convention via SPICE `IAU_MOON` body-fixed frame
+- computed locally via `pxform("J2000", "IAU_MOON", et)`
+- script: `scripts/fetch_ephemeris.py`
 
 The orientation pipeline therefore means:
 
@@ -397,15 +397,29 @@ The spacecraft trajectory in the default scene is defined as:
 
 Primary source:
 
-- JPL Horizons vector tables
+- JPL Horizons REST API (`https://ssd.jpl.nasa.gov/api/horizons.api`)
+- script: `scripts/fetch_trajectory.py`
+
+The authoritative Horizons target is `-1024`, and Horizons also resolves `Artemis II` to the same spacecraft identity. Other mission aliases such as `Integrity` and `EM-2` may be accepted by Horizons, but the documented data pipeline uses `COMMAND = -1024`.
+
+**Trajectory coverage:** data starts after ICPS separation, `3h 24m 18s` after launch (`2026-Apr-1 @ 22:24 UTC`), i.e. from approximately `2026-Apr-2 @ 01:48 UTC`. No trajectory data is available prior to ICPS separation.
 
 The Horizons configuration used for this project is geocentric:
 
+- `COMMAND = -1024`
 - `EPHEM_TYPE = VECTORS`
 - `CENTER = 500@399`
 - `REF_SYSTEM = J2000`
 - `REF_PLANE = FRAME`
 - `OUT_UNITS = KM-S`
+
+Those query semantics mean:
+
+- `COMMAND` selects the spacecraft target
+- `CENTER = 500@399` requests vectors relative to Earth center
+- `REF_SYSTEM = J2000` keeps the output axes aligned with the practical inertial frame used elsewhere in the app
+- `REF_PLANE = FRAME` keeps the vector plane tied to the Horizons frame definition used by the query
+- `OUT_UNITS = KM-S` returns kilometers and kilometers per second
 
 That means:
 
@@ -420,6 +434,7 @@ Mission-validity condition for this dataset:
 
 - NASA currently describes Artemis II closest approach as about `4,000 to 6,000 miles` above the Moon’s surface
 - that is about `6,437 to 9,656 km` above the lunar surface
+- the authoritative trajectory plus corrected SPICE Moon ephemeris yields a closest approach of about `6,583.9 km` above the lunar surface
 - a trajectory file that never reaches that band is not acceptable as an Artemis II trajectory for this app
 
 ### 4.1 Spacecraft orientation
@@ -635,10 +650,10 @@ Intended meaning:
 
 Known deviations from the target model:
 
-- the app currently mixes UTC-derived Julian dates with TDB-tagged ephemeris/trajectory sources
 - the current `BCRS` selector is translation-only, not a true barycentric recomputation of all bodies
 - Earth geographic outputs are spherical, not geodetic
 - Earth texture zero-meridian registration is still assumed by the current pipeline rather than fully proven from source metadata
+- the authoritative ephemeris and trajectory generation paths are now strict: no analytical ephemeris fallback and no simulated trajectory fallback
 
 ## Scientific Model Summary
 
@@ -668,8 +683,8 @@ The Sun vector should be:
 The Moon vector should be:
 
 - Moon relative to Earth center
-- from SPICE `DE440`
-- in practical `J2000` / `ICRF`-aligned coordinates
+- from local SPICE `spkez(MOON, et, "J2000", "NONE", EARTH)`
+- in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
 
 Moon rotation is separate and should come from the IAU lunar body-fixed model or SPICE `IAU_MOON`.
 
@@ -678,8 +693,10 @@ Moon rotation is separate and should come from the IAU lunar body-fixed model or
 The spacecraft trajectory should be:
 
 - spacecraft relative to Earth center
-- from Horizons geocentric vector tables
-- in practical `J2000` coordinates
+- from JPL Horizons target `-1024`
+- with Horizons also resolving `Artemis II` to the same spacecraft identity
+- using `COMMAND = -1024`, `CENTER = 500@399`, `REF_SYSTEM = J2000`, `REF_PLANE = FRAME`, `OUT_UNITS = KM-S`
+- in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
 - with epochs treated as `JDTDB`, not as naive UTC JD
 
 ### 5. BCRS

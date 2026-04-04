@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useMissionStore } from '../store/missionStore';
-import { toJulianDate, fromJulianDate, formatUTC, formatMET, getMET } from '../lib/time';
+import { getDefaultMissionJD, fromJulianDate, formatUTC, formatMET, getMET } from '../lib/time';
 
 export interface MissionTimeResult {
   julianDate: number;
@@ -18,7 +18,7 @@ export function useMissionTime(): MissionTimeResult {
     if (mode === 'live') {
       // Update every second from the real clock
       const id = setInterval(() => {
-        setCurrentJD(toJulianDate(new Date()));
+        setCurrentJD(getDefaultMissionJD());
       }, 1000);
       return () => clearInterval(id);
     }

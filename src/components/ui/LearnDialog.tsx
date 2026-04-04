@@ -50,7 +50,7 @@ When the world indicator rotates with the view, it is showing how the camera is 
   {
     id: 'frames',
     label: 'Frames',
-    summary: 'GCRS, BCRS, and body-fixed orientation.',
+    summary: 'GCRS-like motion, SPICE rotation, and body-fixed orientation.',
     content: `
 Space missions use **families of coordinate systems**, not one universal frame. The correct frame depends on mission phase: launch and tracking near Earth, proximity operations in orbit, translunar cruise, planetary approach, surface operations, or deep-space navigation.
 
@@ -225,13 +225,13 @@ This last layer is **not** a NASA or IAU scientific standard. It is the applicat
   {
     id: 'data',
     label: 'Data',
-    summary: 'SPICE, Horizons, and the sky map.',
+    summary: 'Horizons trajectory, SPICE Moon state, and the sky map.',
     content: `
 This app combines **three different data classes**, and each class has to keep its own coordinate and time contract clear.
 
 ## 1. Translational ephemerides
 
-The Sun, Earth, and Moon scene positions come from high-precision ephemeris data derived from **DE440 / SPICE-style state vectors**. These are inertial **position vectors**, not texture orientations and not screen-space hints.
+The Sun and Earth scene positions come from high-precision ephemeris data derived from **DE440 / SPICE-style state vectors**. The Moon translational state is computed locally from SPICE with the same inertial conventions. These are inertial **position vectors**, not texture orientations and not screen-space hints.
 
 For each translational dataset, the minimum scientific definition is:
 
@@ -244,15 +244,19 @@ If any one of those is wrong, the scene may still look plausible while being phy
 
 ## 2. Spacecraft trajectory
 
-The Artemis trajectory is loaded from **JPL Horizons vector tables**. In the geocentric scene, the required contract is:
+The Artemis trajectory is loaded from **JPL Horizons vector tables**. The authoritative target is \`-1024\`, and Horizons also resolves \`Artemis II\` to the same spacecraft identity. In the geocentric scene, the required contract is:
 
 - origin: Earth center
-- axes: practical J2000 / ICRF-aligned inertial axes
+- axes: practical \`GCRS\`-like / Earth-centered \`J2000\` / \`ICRF\`-aligned inertial axes
 - distance units: kilometers
 - velocity units: kilometers per second
+- \`COMMAND = -1024\`
+- \`CENTER = 500@399\`
+- \`REF_SYSTEM = J2000\`
 - vector reference plane: \`REF_PLANE=FRAME\`
+- \`OUT_UNITS = KM-S\`
 
-That last item matters. Earlier pipeline mistakes came from mixing vectors expressed in an equatorial inertial frame with vectors requested in an ecliptic plane. Direction can look "roughly right" while still producing wrong flyby geometry or wrong apparent Sun motion.
+That query contract matters. It keeps the trajectory in the same Earth-centered inertial frame family used by the rest of the app and avoids frame-plane mistakes that can make a trajectory look "roughly right" while still producing wrong flyby geometry.
 
 ## 3. Rotational/cartographic data
 
@@ -264,6 +268,8 @@ That means the app must separately answer:
 - where longitude $0^\\circ$ is
 - how the prime meridian rotates with time
 - how the texture image is registered to that longitude/latitude grid
+
+For the Moon, the body-fixed orientation is obtained from SPICE \`pxform("J2000", "IAU_MOON", et)\`.
 
 So a correct scene requires **both**:
 
@@ -298,8 +304,9 @@ The app therefore treats "what time is displayed to the user" and "what epoch th
 
 For debugging or review, every imported dataset should be describable in a compact sentence:
 
-- **Sun/Moon/Earth states**: inertial Cartesian vectors in an ICRF/J2000-aligned frame, evaluated at declared epochs
-- **Spacecraft trajectory**: Horizons vectors in Earth-centered inertial coordinates with declared frame-plane settings
+- **Sun/Earth states**: inertial Cartesian vectors in an ICRF/J2000-aligned frame, evaluated at declared epochs
+- **Moon translational state**: local SPICE \`spkez(MOON, et, "J2000", "NONE", EARTH)\` result in Earth-centered inertial coordinates
+- **Spacecraft trajectory**: Horizons vectors for target \`-1024\` in Earth-centered inertial coordinates with declared frame-plane settings
 - **Earth/Moon orientation**: rotating body-fixed orientation applied on top of translational states
 - **Star map**: celestial sphere texture registered to right ascension/declination in the same inertial orientation
 
@@ -373,6 +380,14 @@ JPL Horizons and SPICE provide translational states with declared:
 - axes
 - units
 - time scale
+
+For this project, the verified source split is:
+
+- spacecraft trajectory: JPL Horizons target \`-1024\`
+- Moon translational state: local SPICE \`spkez(MOON, et, "J2000", "NONE", EARTH)\`
+- Moon orientation: local SPICE \`pxform("J2000", "IAU_MOON", et)\`
+
+There are no analytical ephemeris fallback paths and no simulated trajectory fallback paths in the authoritative pipeline.
 
 Body orientation, cartography, and lighting must then be attached consistently on top of those translational states.
 

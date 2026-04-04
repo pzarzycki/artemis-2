@@ -43,6 +43,16 @@ export function formatMET(seconds: number): string {
  * Computed: datetime(2026,4,1,22,35,12,UTC).timestamp()/86400 + 2440587.5
  */
 export const ARTEMIS2_LAUNCH_JD = 2461132.441111111;
+export const ARTEMIS2_DATA_START_JD = ARTEMIS2_LAUNCH_JD - 1;
+export const ARTEMIS2_DATA_END_JD = ARTEMIS2_LAUNCH_JD + 11;
+
+export function getDefaultMissionJD(now: Date = new Date()): number {
+  const nowJD = toJulianDate(now);
+  if (nowJD >= ARTEMIS2_DATA_START_JD && nowJD <= ARTEMIS2_DATA_END_JD) {
+    return nowJD;
+  }
+  return ARTEMIS2_LAUNCH_JD;
+}
 
 /** Mission Elapsed Time in seconds from launch JD */
 export function getMET(currentJD: number): number {
