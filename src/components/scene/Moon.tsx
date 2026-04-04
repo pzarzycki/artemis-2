@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
+import { assetUrl } from '../../config/assets';
 import type { Vec3 } from '../../lib/coordinates/types';
 import { LocalAxes } from './DebugAxes';
 
@@ -13,8 +14,8 @@ interface MoonProps {
 
 export default function Moon({ position, orientation, showAxes }: MoonProps) {
   const [albedoMap, normalMap] = useLoader(TextureLoader, [
-    '/textures/moon_8k.jpg',
-    '/textures/moon_normal_8k.jpg',
+    assetUrl('textures/moon_8k.jpg'),
+    assetUrl('textures/moon_normal_8k.jpg'),
   ]);
 
   // Memoize — moonOrientationToEuler creates new Three.js objects; only recompute when orientation changes

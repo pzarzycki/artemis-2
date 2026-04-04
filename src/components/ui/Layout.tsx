@@ -17,7 +17,7 @@ export default function Layout() {
     <div className={styles.root}>
       <ErrorBoundary>
         <div className={styles.canvas}>
-          <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" />}>
+          <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" sceneOnly />}>
             <Scene />
           </Suspense>
           <AssetLoadingOverlay />

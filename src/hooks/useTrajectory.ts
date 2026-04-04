@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { TrajectoryData, SpacecraftState } from '../lib/ephemeris/interpolate';
 import { interpolateTrajectory } from '../lib/ephemeris/interpolate';
+import { assetUrl } from '../config/assets';
 
 let cachedData: TrajectoryData | null = null;
 let fetchPromise: Promise<TrajectoryData> | null = null;
@@ -8,7 +9,7 @@ let fetchPromise: Promise<TrajectoryData> | null = null;
 async function loadTrajectory(): Promise<TrajectoryData> {
   if (cachedData) return cachedData;
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch('/data/trajectory.json')
+  fetchPromise = fetch(assetUrl('data/trajectory.json'))
     .then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();

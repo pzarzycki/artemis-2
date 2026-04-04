@@ -2,6 +2,7 @@ import { useRef, useMemo } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
 import * as THREE from 'three';
+import { assetUrl } from '../../config/assets';
 import { LocalAxes } from './DebugAxes';
 
 interface EarthProps {
@@ -14,11 +15,11 @@ export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
   const earthRef = useRef<THREE.Mesh>(null!);
   const cloudsRef = useRef<THREE.Mesh>(null!);
   const [dayMap, nightMap, normalMap, specMap, cloudsMap] = useLoader(TextureLoader, [
-    '/textures/earth_day_8k.jpg',
-    '/textures/earth_night_8k.jpg',
-    '/textures/earth_normal_8k.jpg',
-    '/textures/earth_specular_8k.jpg',
-    '/textures/earth_clouds_8k.jpg',
+    assetUrl('textures/earth_day_8k.jpg'),
+    assetUrl('textures/earth_night_8k.jpg'),
+    assetUrl('textures/earth_normal_8k.jpg'),
+    assetUrl('textures/earth_specular_8k.jpg'),
+    assetUrl('textures/earth_clouds_8k.jpg'),
   ]);
 
   // Memoize color constants so they're not recreated every render

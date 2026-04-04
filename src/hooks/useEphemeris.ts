@@ -4,6 +4,7 @@ import { interpolateEphemeris } from '../lib/ephemeris/interpolate';
 import { gmstFromJD } from '../lib/coordinates/gmst';
 import { getMoonOrientation } from '../lib/coordinates/moonOrientation';
 import type { Vec3 } from '../lib/coordinates/types';
+import { assetUrl } from '../config/assets';
 
 let cachedData: EphemerisData | null = null;
 let fetchPromise: Promise<EphemerisData> | null = null;
@@ -11,7 +12,7 @@ let fetchPromise: Promise<EphemerisData> | null = null;
 async function loadEphemeris(): Promise<EphemerisData> {
   if (cachedData) return cachedData;
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch('/data/ephemeris.json')
+  fetchPromise = fetch(assetUrl('data/ephemeris.json'))
     .then((r) => r.json())
     .then((d) => { cachedData = d; return d; });
   return fetchPromise;

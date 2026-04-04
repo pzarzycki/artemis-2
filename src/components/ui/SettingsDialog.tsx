@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMissionStore } from '../../store/missionStore';
+import { assetUrl } from '../../config/assets';
 import { STAR_MAP_OPTIONS, type StarMapResolution } from '../../config/starmaps';
 import styles from './SettingsDialog.module.css';
 
@@ -91,7 +92,7 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
   useEffect(() => {
     let cancelled = false;
 
-    fetch('/starmaps/manifest.json')
+    fetch(assetUrl('starmaps/manifest.json'))
       .then((response) => response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`)))
       .then((payload: { available?: string[] }) => {
         if (cancelled) return;
