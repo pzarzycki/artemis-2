@@ -58,7 +58,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   showStars: true,
   showObjectAxes: true,
   showTrajectory: true,
-  skyExposure: 1,
+  skyExposure: 0.5,
   bloomIntensity: 0.6,
   ambientLightIntensity: 0.03,
   cameraPosition: [0, 0, 0],

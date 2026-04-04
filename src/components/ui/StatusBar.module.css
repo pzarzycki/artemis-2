@@ -10,11 +10,26 @@
   -webkit-backdrop-filter: var(--blur);
 }
 
+.left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
 .mission {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .name {
@@ -27,8 +42,24 @@
 .times {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 16px;
-  flex: 1;
+  flex: 0 0 auto;
+  flex-shrink: 0;
+}
+
+.learnBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
 }
 
 .timeItem {
@@ -54,28 +85,6 @@
   width: 1px;
   height: 18px;
   background: var(--border);
-}
-
-.status {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.learnBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-primary);
 }
 
 .shareGroup {
@@ -171,7 +180,6 @@
   50% { opacity: 0.3; }
 }
 
-/* Tablet: hide secondary time on small screens */
 @media (max-width: 600px) {
   .times .divider,
   .times .timeItem:last-child {

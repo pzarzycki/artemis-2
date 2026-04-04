@@ -1,18 +1,79 @@
 # Artemis II Tracker
 
-Astronomical 3D tracker for the Artemis II mission.
+![GitHub Pages](https://github.com/pzarzycki/artemis-2/actions/workflows/deploy-pages.yml/badge.svg)
+![React](https://img.shields.io/badge/React-19-1d2330?logo=react)
+![Three.js](https://img.shields.io/badge/Three.js-WebGL-1d2330?logo=three.js)
+![Scientific Frame Spec](https://img.shields.io/badge/Frames-GCRS%20%7C%20BCRS%20%7C%20ICRS-1d2330)
 
-This README is the project specification. It defines the coordinate systems, time systems, body orientations, texture conventions, and dataset meanings that the application must implement. It also states, separately and briefly, where the current code still deviates from that model.
+Scientific WebGL mission viewer for Artemis II, with explicit handling of inertial frames, body-fixed orientations, sky-map registration, and mission timeline playback.
 
-## What This Project Represents
+**Live site:** https://pzarzycki.github.io/artemis-2/  
+**Source:** https://github.com/pzarzycki/artemis-2
 
-The scene contains:
+`react` `three.js` `webgl` `nasa horizons` `spice` `de440` `gcrs` `bcrs` `icrs` `mission visualization`
+
+This README is the project specification and project-facing repository guide. It defines:
+
+- the scientific coordinate and time contracts used by the app
+- the meaning of each major dataset and texture
+- the WebGL/rendering convention used in the viewer
+- the deployment contract for the GitHub Pages build
+
+It also states, separately and briefly, where the current implementation still deviates from that target model.
+
+## Project Links
+
+- Live mission viewer: https://pzarzycki.github.io/artemis-2/
+- GitHub repository: https://github.com/pzarzycki/artemis-2
+- GitHub Pages deployment workflow: [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
+- Container build: [`Dockerfile`](./Dockerfile)
+
+## Project Overview
+
+The application currently renders:
 
 - Earth
 - Moon
 - Sun
 - Artemis II spacecraft
-- trajectory curves
+- mission trajectory
+- celestial background sky map
+- world-axis and ecliptic orientation helpers
+
+The design goal is not a generic "solar system viewer". It is a mission-oriented scientific visualization with clear contracts for:
+
+- frame origin
+- frame orientation
+- handedness
+- time scale
+- translational ephemerides
+- body-fixed rotations
+- texture registration
+- camera reporting and targeting
+
+## Deployment
+
+The default public deployment target is GitHub Pages at:
+
+- `https://pzarzycki.github.io/artemis-2/`
+
+The production build therefore uses:
+
+- `VITE_BASE_PATH=/artemis-2/`
+- `VITE_APP_URL=https://pzarzycki.github.io/artemis-2/`
+- `VITE_SOURCE_URL=https://github.com/pzarzycki/artemis-2`
+
+The repository includes:
+
+- a multi-stage [`Dockerfile`](./Dockerfile) for reproducible static builds
+- a Docker-based GitHub Actions Pages workflow in [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
+
+For local development the app still runs at:
+
+- `http://localhost:5173/`
+- server bind: `0.0.0.0:5173`
+
+## What This Project Represents
 
 The scene scale is:
 

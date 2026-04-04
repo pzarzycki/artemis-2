@@ -1,0 +1,61 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build static site image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          target: build
+          tags: artemis-2-pages:${{ github.sha }}
+          build-args: |
+            VITE_BASE_PATH=/artemis-2/
+            VITE_APP_URL=https://pzarzycki.github.io/artemis-2/
+            VITE_SOURCE_URL=https://github.com/pzarzycki/artemis-2
+
+      - name: Extract dist artifact from image
+        run: |
+          cid="$(docker create artemis-2-pages:${{ github.sha }})"
+          mkdir -p dist
+          docker cp "$cid":/app/dist/. ./dist
+          docker rm "$cid"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

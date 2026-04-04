@@ -1,0 +1,8 @@
+.git
+.github
+.codex
+.venv
+dist
+node_modules
+scripts/kernels
+scripts/test_plots
