@@ -5,25 +5,18 @@
 ![Three.js](https://img.shields.io/badge/Three.js-WebGL-1d2330?logo=three.js)
 ![Scientific Frame Spec](https://img.shields.io/badge/Frames-GCRS%20%7C%20BCRS%20%7C%20ICRS-1d2330)
 
-Scientific WebGL mission viewer for Artemis II, with explicit handling of inertial frames, body-fixed orientations, sky-map registration, and mission timeline playback.
+Real-time 3D mission tracker for NASA's Artemis II lunar flyby, built with React + Three.js using GCRS/BCRS/ICRS reference frames, ephemeris data from JPL Horizons and SPICE DE440, and a registered celestial sky map.
 
-`react` `three.js` `webgl` `nasa horizons` `spice` `de440` `gcrs` `bcrs` `icrs` `mission visualization`
+**[▶ Open live viewer](https://pzarzycki.github.io/artemis-2/)**
 
-This README is the project specification and project-facing repository guide. It defines:
+![Artemis II viewer screenshot](docs/img/artemis-2-viewer-scr.png)
 
-- the scientific coordinate and time contracts used by the app
-- the meaning of each major dataset and texture
-- the WebGL/rendering convention used in the viewer
-- the deployment contract for the GitHub Pages build
+<details>
+<summary>About this README</summary>
 
-It also states, separately and briefly, where the current implementation still deviates from that target model.
+This README is the project specification and repository guide. It defines the scientific coordinate and time contracts used by the app, the meaning of each major dataset and texture, the WebGL/rendering convention, and the deployment contract for the GitHub Pages build. It also notes where the current implementation still deviates from that target model.
 
-## Project Links
-
-- Live mission viewer: https://pzarzycki.github.io/artemis-2/
-- GitHub repository: https://github.com/pzarzycki/artemis-2
-- GitHub Pages deployment workflow: [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
-- Container build: [`Dockerfile`](./Dockerfile)
+</details>
 
 ## Project Overview
 
@@ -37,7 +30,7 @@ The application currently renders:
 - celestial background sky map
 - world-axis and ecliptic orientation helpers
 
-The design goal is not a generic "solar system viewer". It is a mission-oriented scientific visualization with clear contracts for:
+The rendering has explicit contracts for:
 
 - frame origin
 - frame orientation
@@ -98,14 +91,14 @@ The scene scale is:
 
 - `1 Three.js unit = 1 km`
 
-The scientific problem is not just "draw some planets". It is:
+The rendering requires:
 
-- define one inertial world frame,
-- define one time convention,
-- define one body-fixed orientation convention for Earth,
-- define one body-fixed orientation convention for Moon,
-- ensure textures are registered to those body-fixed frames,
-- ensure every state vector is labeled by origin, axes, units, and time scale.
+- one inertial world frame,
+- one time convention,
+- one body-fixed orientation convention for Earth,
+- one body-fixed orientation convention for Moon,
+- textures registered to those body-fixed frames,
+- every state vector labeled by origin, axes, units, and time scale.
 
 ## Rendering Convention
 
@@ -148,9 +141,7 @@ The in-app `Learn` dialog is intended to summarize the same contracts defined he
 - Earth-fixed and Moon-fixed rotational frames
 - ephemeris/data products from SPICE, Horizons, and the celestial background map
 
-## Primary External References
-
-These are the authoritative external references used for the scientific model in this README:
+## External References
 
 - IERS Conventions / reference-system material:
   https://iers-conventions.obspm.fr/conventions_material.php
@@ -308,7 +299,7 @@ Those three uses must always come from the same Sun vector.
 
 The night-sky background must use a celestial map whose coordinates are aligned with the same inertial axes as the rest of the scene.
 
-Authoritative source used here:
+Source:
 
 - NASA SVS Deep Star Maps 2020 celestial map
 
@@ -357,7 +348,7 @@ The intended lunar orientation model is:
 
 - IAU lunar pole and prime meridian convention
 
-Authoritative practical source:
+Primary source:
 
 - SPICE `IAU_MOON` body-fixed frame, if available from the loaded kernel set
 
@@ -393,11 +384,7 @@ The intended texture convention is:
 - south at bottom
 - longitude `0°` aligned with the lunar prime meridian
 
-Source-backed fact:
-
-- the NASA SVS CGI Moon Kit page states that the published Moon map is centered on `0° longitude`
-
-That is exactly the cartographic condition needed for a correct Moon-fixed texture.
+The NASA SVS CGI Moon Kit page states that the published Moon map is centered on `0° longitude`, which is exactly the cartographic condition needed for a correct Moon-fixed texture.
 
 ## 4. Spacecraft Trajectory
 
@@ -427,7 +414,7 @@ That means:
 - state = geocentric inertial
 - units = km and km/s
 
-This is the correct source class for the spacecraft trajectory in the geocentric world view.
+This is the correct source for the spacecraft trajectory in the geocentric world view.
 
 Mission-validity condition for this dataset:
 
@@ -446,8 +433,6 @@ At present, unless a true attitude product is available, the spacecraft orientat
 That is acceptable as a debug visualization, but it must not be described as true spacecraft attitude unless a real attitude source is added.
 
 ## 5. BCRS: What It Means and What It Requires
-
-This is the most important place where translation, orientation, and time must not be hand-waved.
 
 ### 5.1 What BCRS means
 
@@ -527,8 +512,6 @@ This means the ecliptic helper in the app must obey:
 
 ## Time System
 
-This project cannot be scientifically correct without a declared time convention.
-
 ### User-facing time
 
 The UI uses:
@@ -549,25 +532,13 @@ For SPICE and Horizons state vectors, the practical dynamical time convention is
 
 - TDB-like ephemeris time
 
-Source-backed fact:
+Horizons vector epochs are reported in `JDTDB`, so trajectory epochs are not plain UTC Julian dates.
 
-- Horizons vector epochs are reported in `JDTDB`
+Trajectory start `JD 2461132.584028`, interpreted as `JDTDB`, corresponds to about `2026-04-02T01:59:50.834 UTC`.
 
-That means:
+In the current SPICE generation path, feeding a UTC-derived JD to SPICE as `JDTDB` creates about a `69.186 s` offset around `2026-04-01`. That is a real issue in the current pipeline.
 
-- trajectory epochs are not plain UTC Julian dates
-
-Source-backed runtime check in this repo:
-
-- trajectory start `JD 2461132.584028`, interpreted correctly as `JDTDB`, corresponds to about `2026-04-02T01:59:50.834 UTC`
-
-Source-backed runtime check in this repo for the current SPICE generation path:
-
-- taking a UTC-derived JD and feeding it to SPICE as `JDTDB` creates about a `69.186 s` offset around `2026-04-01`
-
-That is a real issue in the current pipeline.
-
-The scientific rule is therefore:
+The rule is:
 
 - UI time may be UTC
 - ephemeris lookup time must be explicitly converted to the ephemeris time scale before state-vector evaluation
@@ -586,7 +557,7 @@ For a physically rigorous Earth texture orientation, the app must distinguish:
 
 ## Texture and Cartography Requirements
 
-## Earth
+### Earth
 
 The Earth texture stack must be treated as a single registered cartographic product:
 
@@ -608,11 +579,11 @@ In this project, the current code assumes:
 - prime meridian at the horizontal center of the map
 - map center aligned to body `+X`
 
-That assumption must be verified against the actual Earth texture source metadata if we want to claim the Earth texture is scientifically registered.
+That assumption must be verified against the actual Earth texture source metadata to confirm the Earth texture is correctly registered.
 
 At the moment, the Moon texture registration is better documented than the Earth texture registration.
 
-## Moon
+### Moon
 
 The Moon texture stack is intended to be:
 
@@ -641,7 +612,7 @@ They are the easiest way to verify:
 
 ## Data Products
 
-## `ephemeris.json`
+### `ephemeris.json`
 
 Intended meaning:
 
@@ -651,7 +622,7 @@ Intended meaning:
 - `gmstRad` or equivalent Earth orientation quantity: Earth rotation for Earth-fixed longitude mapping
 - `moonOrientation`: Moon pole and prime meridian orientation
 
-## `trajectory.json`
+### `trajectory.json`
 
 Intended meaning:
 
@@ -662,9 +633,7 @@ Intended meaning:
 
 ## Current Implementation Status
 
-This section is intentionally brief. The scientific model above is the target meaning of the project.
-
-Current known deviations in this repo:
+Known deviations from the target model:
 
 - the app currently mixes UTC-derived Julian dates with TDB-tagged ephemeris/trajectory sources
 - the current `BCRS` selector is translation-only, not a true barycentric recomputation of all bodies

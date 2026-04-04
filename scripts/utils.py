@@ -5,15 +5,19 @@ from pathlib import Path
 # Repo root (scripts/ is one level below)
 REPO_ROOT = Path(__file__).parent.parent
 PUBLIC_DIR = REPO_ROOT / "public"
-TEXTURES_DIR = PUBLIC_DIR / "textures"
-DATA_DIR = PUBLIC_DIR / "data"
+ASSETS_DIR = PUBLIC_DIR / "assets"
+TEXTURES_DIR = ASSETS_DIR / "textures"
+DATA_DIR = ASSETS_DIR / "data"
+RAW_CACHE_DIR = REPO_ROOT / "cache" / "textures" / "raw"
 KERNELS_DIR = Path(__file__).parent / "kernels"
 
 
 def ensure_dirs() -> None:
     """Create output directories if they don't exist."""
+    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     TEXTURES_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     KERNELS_DIR.mkdir(parents=True, exist_ok=True)
 
 

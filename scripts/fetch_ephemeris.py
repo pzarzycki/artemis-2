@@ -3,7 +3,7 @@
 Compute Earth/Moon/Sun ephemeris data for the Artemis 2 Tracker.
 
 Uses SPICE kernels (spiceypy) as primary source with analytical fallback.
-Outputs public/data/ephemeris.json covering the Artemis 2 mission window.
+Outputs public/assets/data/ephemeris.json covering the Artemis 2 mission window.
 
 Run with:
     uv run python scripts/fetch_ephemeris.py [--start 2026-09-15] [--days 14] [--step-hours 0.25]

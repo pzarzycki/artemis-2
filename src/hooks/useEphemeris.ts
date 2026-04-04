@@ -12,7 +12,7 @@ let fetchPromise: Promise<EphemerisData> | null = null;
 async function loadEphemeris(): Promise<EphemerisData> {
   if (cachedData) return cachedData;
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch(assetUrl('data/ephemeris.json'))
+  fetchPromise = fetch(assetUrl('assets/data/ephemeris.json'))
     .then((r) => r.json())
     .then((d) => { cachedData = d; return d; });
   return fetchPromise;

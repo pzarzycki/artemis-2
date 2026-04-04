@@ -5,6 +5,8 @@ Fetch Artemis 2 spacecraft trajectory data from JPL Horizons.
 Target: -1024 (Orion EM-2 / Artemis 2 crew capsule)
 Source: JPL Horizons REST API, geocentric J2000, km, km/s
 
+Outputs public/assets/data/trajectory.json.
+
 Run with:
     uv run python scripts/fetch_trajectory.py
     uv run python scripts/fetch_trajectory.py --step-minutes 1  # higher resolution

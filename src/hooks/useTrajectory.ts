@@ -9,7 +9,7 @@ let fetchPromise: Promise<TrajectoryData> | null = null;
 async function loadTrajectory(): Promise<TrajectoryData> {
   if (cachedData) return cachedData;
   if (fetchPromise) return fetchPromise;
-  fetchPromise = fetch(assetUrl('data/trajectory.json'))
+  fetchPromise = fetch(assetUrl('assets/data/trajectory.json'))
     .then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();

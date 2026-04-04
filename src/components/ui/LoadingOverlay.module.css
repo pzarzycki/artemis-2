@@ -7,15 +7,12 @@
   justify-content: center;
   gap: 16px;
   background: var(--bg-primary);
-  z-index: 100;
+  z-index: 10;
 }
 
 .sceneOnly {
-  inset: 56px 292px 104px 16px;
-  border-radius: 16px;
+  inset: 48px 0 0 0;
   background: linear-gradient(180deg, rgba(7, 10, 18, 0.9), rgba(5, 7, 14, 0.82));
-  border: 1px solid rgba(182, 225, 255, 0.08);
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
 .nonBlocking {

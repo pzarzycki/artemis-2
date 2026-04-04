@@ -7,5 +7,5 @@ export default function AssetLoadingOverlay() {
   if (!active) return null;
 
   const rounded = Math.max(0, Math.min(100, Math.round(progress)));
-  return <LoadingOverlay message={`Loading assets… ${rounded}%`} nonBlocking sceneOnly />;
+  return <LoadingOverlay message={`Loading assets… ${rounded}%`} sceneOnly />;
 }

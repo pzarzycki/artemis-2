@@ -2,7 +2,8 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-RUN apk add --no-cache python3
+COPY --from=ghcr.io/astral-sh/uv:0.11.3 /uv /uvx /bin/
+RUN apk add --no-cache python3 py3-pip
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -18,7 +19,7 @@ ENV VITE_BASE_PATH=$VITE_BASE_PATH
 ENV VITE_APP_URL=$VITE_APP_URL
 ENV VITE_SOURCE_URL=$VITE_SOURCE_URL
 
-RUN python3 scripts/download_starmaps.py ${STAR_MAP_RESOLUTIONS}
+RUN uv run --no-project python scripts/download_starmaps.py ${STAR_MAP_RESOLUTIONS}
 RUN npm run build
 
 FROM nginx:1.29-alpine AS runtime

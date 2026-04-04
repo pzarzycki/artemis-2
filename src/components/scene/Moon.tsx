@@ -14,8 +14,8 @@ interface MoonProps {
 
 export default function Moon({ position, orientation, showAxes }: MoonProps) {
   const [albedoMap, normalMap] = useLoader(TextureLoader, [
-    assetUrl('textures/moon_8k.jpg'),
-    assetUrl('textures/moon_normal_8k.jpg'),
+    assetUrl('assets/textures/moon_8k.jpg'),
+    assetUrl('assets/textures/moon_normal_8k.jpg'),
   ]);
 
   // Memoize — moonOrientationToEuler creates new Three.js objects; only recompute when orientation changes

@@ -12,10 +12,9 @@ dist
 dist-ssr
 *.local
 
-# Generated data (run scripts/ to regenerate)
-public/textures/
+# Generated runtime assets
 public/starmaps/
-public/data/
+cache/
 
 # Python / uv
 .venv/

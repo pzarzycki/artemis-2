@@ -9,7 +9,7 @@ Sources:
   Earth  — Solar System Scope (CC BY 4.0) based on NASA Blue Marble / Black Marble
   Moon   — NASA SVS CGI Moon Kit (2025 LROC color + LOLA displacement for normals)
 
-Outputs to public/textures/ with canonical names expected by the frontend:
+Outputs to public/assets/textures/ with canonical names expected by the frontend:
   earth_day_8k.jpg        earth_night_8k.jpg    earth_clouds_8k.jpg
   earth_normal_8k.jpg     earth_specular_8k.jpg
   moon_8k.jpg             moon_normal_8k.jpg
@@ -23,7 +23,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).parent))
-from utils import ensure_dirs, download_file, TEXTURES_DIR
+from utils import RAW_CACHE_DIR, TEXTURES_DIR, download_file, ensure_dirs
 
 # ---------------------------------------------------------------------------
 # Source URLs — always highest-quality originals; we resize for lower tiers
@@ -188,8 +188,8 @@ def main() -> None:
     w, h = size
 
     ensure_dirs()
-    cache = TEXTURES_DIR / "raw"
-    cache.mkdir(exist_ok=True)
+    cache = RAW_CACHE_DIR
+    cache.mkdir(parents=True, exist_ok=True)
 
     print(f"\n━━━ Artemis 2 Tracker — texture pipeline  [{Q} = {w}×{h}] ━━━\n")
 
