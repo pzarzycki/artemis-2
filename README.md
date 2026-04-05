@@ -42,18 +42,7 @@ The default public deployment target is GitHub Pages at:
 
 - `https://pzarzycki.github.io/artemis-2/`
 
-The production build therefore uses:
-
-- `VITE_BASE_PATH=/artemis-2/`
-- `VITE_APP_URL=https://pzarzycki.github.io/artemis-2/`
-- `VITE_SOURCE_URL=https://github.com/pzarzycki/artemis-2`
-
-The repository includes:
-
-- a multi-stage [`Dockerfile`](./Dockerfile) for reproducible static builds
-- a Docker-based GitHub Actions Pages workflow in [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml)
-
-For local development the app still runs at:
+For local development, the app runs at:
 
 - `http://localhost:5173/`
 - server bind: `0.0.0.0:5173`
@@ -119,7 +108,7 @@ Presentation rule:
 
 - the selected scientific Cartesian frame is mapped directly into the render world without handedness flips or hidden axis swaps
 - any helper indicator shown in the app must respect that same right-handed `Z-up` convention
-- camera position and world-space camera orientation vectors are reported in the currently selected scene frame
+- camera position and world-space camera orientation vectors are reported in the selected scene frame
 - the camera panel reports orientation primarily as `RA/Dec` angles of the corresponding world-space direction vectors
 - those `RA/Dec` values are expressed in decimal degrees in the selected inertial frame
 
@@ -161,7 +150,7 @@ Earth stays at `(0, 0, 0)` in this mode. Earth rotation is applied separately th
 - `+X`: equator / Greenwich meridian intersection
 - `+Y`: equator / `90°E`
 
-The stored Earth orientation quantity is `gmstRad`, derived from the SPICE `J2000 -> IAU_EARTH` transform and applied as a rotation about inertial `+Z`. At the current dataset start (`JD 2461131.5`, i.e. `2026-04-01 00:00:00 UTC`), `gmstRad = 2.99047432 rad`, so the Greenwich meridian points at inertial right ascension `171.341557°`.
+The stored Earth orientation quantity is `gmstRad`, derived from the SPICE `J2000 -> IAU_EARTH` transform and applied as a rotation about inertial `+Z`. At dataset start (`JD 2461131.5`, i.e. `2026-04-01 00:00:00 UTC`), `gmstRad = 3.29775608 rad`, so the Greenwich meridian points at inertial right ascension `188.947505°`.
 
 The app's geographic readouts are spherical rather than geodetic:
 
@@ -276,7 +265,7 @@ Source:
 
 The documented target is `COMMAND = -1024`, which is the Horizons / NAIF identifier for Artemis II. Horizons also resolves `Artemis II`, and may accept mission aliases such as `Integrity` and `EM-2`.
 
-**Trajectory coverage:** data starts after ICPS separation, `3h 24m 18s` after launch (`2026-Apr-1 @ 22:24 UTC`), i.e. from approximately `2026-Apr-2 @ 01:48 UTC`. No trajectory data is available prior to ICPS separation.
+**Trajectory coverage:** data starts after ICPS separation, about `3h 24m 39s` after launch (`2026-Apr-1 @ 22:35:12 UTC`), i.e. from approximately `2026-Apr-2 @ 01:59:51 UTC`. No trajectory data is available prior to ICPS separation.
 
 The Horizons configuration used for this project is geocentric:
 
@@ -291,14 +280,14 @@ That yields a geocentric inertial spacecraft state in the same `J2000/ICRF`-alig
 
 Mission-validity condition for this dataset:
 
-- NASA currently describes Artemis II closest approach as about `4,000 to 6,000 miles` above the Moon’s surface
+- NASA describes Artemis II closest approach as about `4,000 to 6,000 miles` above the Moon’s surface
 - that is about `6,437 to 9,656 km` above the lunar surface
 - the authoritative trajectory plus corrected SPICE Moon ephemeris yields a closest approach of about `6,583.9 km` above the lunar surface
 - a trajectory file that never reaches that band is not acceptable as an Artemis II trajectory for this app
 
 ### 4.1 Spacecraft orientation
 
-The app does not currently use an authoritative spacecraft attitude product. The rendered spacecraft orientation is therefore synthetic:
+The app does not use an authoritative spacecraft attitude product. The rendered spacecraft orientation is therefore synthetic:
 
 - point the model approximately along the velocity vector
 
@@ -320,7 +309,7 @@ For a true barycentric mode, the project needs:
 
 All of these must be evaluated at the same epoch in the same time convention.
 
-In the current implementation, barycentric positions are constructed from the geocentric states using:
+In this implementation, barycentric positions are constructed from the geocentric states using:
 
 - `Moon_BCRS(t) = Earth_BCRS(t) + Moon_geocentric(t)`
 - `SC_BCRS(t) = Earth_BCRS(t) + SC_geocentric(t)`
@@ -349,11 +338,11 @@ Frames used by the application:
 
 The UI uses UTC for mission timestamps and labels.
 
-Horizons vector epochs are reported in `JDTDB`, so trajectory epochs are not plain UTC Julian dates.
+Horizons vector epochs are reported in `JDTDB`, and this project converts them to a UTC-facing Julian-date grid in `trajectory.json` (`timeScale: UTC`).
 
-Trajectory start `JD 2461132.584028`, interpreted as `JDTDB`, corresponds to about `2026-04-02T01:59:50.834 UTC`.
+Trajectory start `JD 2461132.583227` corresponds to about `2026-04-02T01:59:51 UTC` in the app's UTC-facing timeline.
 
-In the current SPICE generation path, each UTC sample instant is converted explicitly to SPICE ephemeris time before evaluating the Earth, Moon, and Sun states. That avoids the earlier `~69 s` class of error that appears when a UTC-facing Julian date is misused as if it were already `JDTDB`.
+In the SPICE generation path, each UTC sample instant is converted explicitly to SPICE ephemeris time before evaluating the Earth, Moon, and Sun states. Trajectory samples from Horizons are then mapped to the app's UTC-facing timeline.
 
 Earth orientation is a separate timing problem from inertial state-vector evaluation. In physical terms, Earth longitude belongs to Earth rotation time (`UT1` / sidereal angle), not to the dynamical ephemeris time scale.
 
@@ -375,13 +364,13 @@ All of them must share:
 - the same zero meridian
 - the same north-up orientation
 
-Current assumptions:
+Assumptions:
 
 - equirectangular Earth maps
 - prime meridian at the horizontal center of the map
 - map center aligned to body `+X`
 
-The renderer applies the body-frame rotation separately from the sphere-mesh correction that maps cartographic north from Three.js local `+Y` to body `+Z`. The remaining open question is the source texture registration itself: the current pipeline still assumes Greenwich is centered, but that has not yet been fully proven from source metadata.
+The renderer applies the body-frame rotation separately from the sphere-mesh correction that maps cartographic north from Three.js local `+Y` to body `+Z`. Source metadata has not yet fully confirmed Greenwich centering for the current Earth texture set.
 
 ### Moon
 
@@ -427,8 +416,8 @@ For Earth, local `+Z` stays aligned with inertial world `+Z`, while local `+X/+Y
 - epoch tags associated with the declared ephemeris time convention
 - mission phase metadata for UI annotation
 
-## Current Limits
+## Known Limits
 
-- The current `BCRS` selector is still translation-based rather than a full barycentric recomputation of every body state.
+- The `BCRS` selector is translation-based rather than a full barycentric recomputation of every body state.
 - Earth geographic outputs are spherical, not geodetic.
-- Earth texture zero-meridian registration is still assumed from the current source textures rather than proven from source metadata.
+- Earth texture zero-meridian registration is assumed from source textures rather than proven from source metadata.
