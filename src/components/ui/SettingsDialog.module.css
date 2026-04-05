@@ -76,10 +76,16 @@
   padding: 16px 18px 18px;
 }
 
-.grid {
+.columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 18px;
+  gap: 18px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .row {
@@ -163,7 +169,7 @@
 }
 
 @media (max-width: 760px) {
-  .grid {
+  .columns {
     grid-template-columns: 1fr;
   }
 }

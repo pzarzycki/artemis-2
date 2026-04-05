@@ -73,7 +73,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   starMapLayer: 'starmap',
   starMapResolution: '4k',
   isStarMapLoading: false,
-  bloomIntensity: 0.6,
+  bloomIntensity: 2,
   ambientLightIntensity: 0.03,
   cameraPosition: [0, 0, 0],
   cameraForward: [0, 1, 0],

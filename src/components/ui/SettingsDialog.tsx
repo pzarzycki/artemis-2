@@ -181,48 +181,52 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
         </div>
 
         <div className={styles.body}>
-          <div className={styles.grid}>
-            <SliderRow
-              label="Skymap Exposure"
-              description="Scales the brightness of the background star map only."
-              value={skyExposure}
-              min={0}
-              max={4}
-              step={0.05}
-              onChange={setSkyExposure}
-            />
-            <SliderRow
-              label="Bloom Intensity"
-              description="Controls the strength of the glow/halo around very bright rendered highlights."
-              value={bloomIntensity}
-              min={0}
-              max={2}
-              step={0.05}
-              onChange={setBloomIntensity}
-            />
-            <SliderRow
-              label="Ambient Light"
-              description="Sets the uniform base fill light added everywhere in the scene, including shadowed sides."
-              value={ambientLightIntensity}
-              min={0}
-              max={0.2}
-              step={0.005}
-              onChange={setAmbientLightIntensity}
-            />
-            <LayerRow
-              label="Star Map Layer"
-              description="Chooses which celestial NASA sky layer to render for the background."
-              value={starMapLayer}
-              onChange={setStarMapLayer}
-            />
-            <ResolutionRow
-              label="Star Map Resolution"
-              description="Chooses which locally cached NASA Deep Star Map EXR to load for the background sky."
-              value={starMapResolution}
-              isLoading={isStarMapLoading}
-              onChange={setStarMapResolution}
-              options={visibleResolutions}
-            />
+          <div className={styles.columns}>
+            <div className={styles.column}>
+              <SliderRow
+                label="Skymap Exposure"
+                description="Scales the background skymap brightness."
+                value={skyExposure}
+                min={0}
+                max={4}
+                step={0.05}
+                onChange={setSkyExposure}
+              />
+              <SliderRow
+                label="Bloom Intensity"
+                description="Controls glow around bright highlights."
+                value={bloomIntensity}
+                min={0}
+                max={3}
+                step={0.05}
+                onChange={setBloomIntensity}
+              />
+              <SliderRow
+                label="Ambient Light"
+                description="Sets the scene-wide base fill light."
+                value={ambientLightIntensity}
+                min={0}
+                max={1}
+                step={0.01}
+                onChange={setAmbientLightIntensity}
+              />
+            </div>
+            <div className={styles.column}>
+              <LayerRow
+                label="Star Map Layer"
+                description="Chooses the celestial NASA sky layer."
+                value={starMapLayer}
+                onChange={setStarMapLayer}
+              />
+              <ResolutionRow
+                label="Star Map Resolution"
+                description="Selects the skymap resolution."
+                value={starMapResolution}
+                isLoading={isStarMapLoading}
+                onChange={setStarMapResolution}
+                options={visibleResolutions}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -30,12 +30,18 @@ export default function FrameSelector() {
   const { julianDate } = useMissionTime();
   const ephemeris = useEphemeris(julianDate);
   const hasBCRS = ephemeris.earthPosBCRS !== null;
+  const bcrsTemporarilyDisabled = true;
 
   return (
     <div className={`${styles.group} hud-panel`}>
       <div className={styles.label}>Frame</div>
       {FRAMES.map(({ id, icon, name, sub, requiresBCRS }) => {
-        const unavailable = requiresBCRS && !hasBCRS;
+        const unavailable = (requiresBCRS && !hasBCRS) || (id === 'BCRS' && bcrsTemporarilyDisabled);
+        const title = id === 'BCRS' && bcrsTemporarilyDisabled
+          ? 'Temporarily disabled'
+          : unavailable
+            ? 'Requires SPICE ephemeris (run fetch_ephemeris.py)'
+            : name;
         return (
           <button
             key={id}
@@ -45,11 +51,12 @@ export default function FrameSelector() {
               unavailable ? styles.disabled : '',
             ].join(' ')}
             onClick={() => !unavailable && setReferenceFrame(id)}
-            title={unavailable ? 'Requires SPICE ephemeris (run fetch_ephemeris.py)' : name}
+            title={title}
+            disabled={unavailable}
           >
             <span className={styles.icon}>{icon}</span>
             <span className={styles.name}>{name}</span>
-            <span className={styles.sub}>{unavailable ? 'N/A' : sub}</span>
+            <span className={styles.sub}>{id === 'BCRS' && bcrsTemporarilyDisabled ? 'Disabled' : unavailable ? 'N/A' : sub}</span>
           </button>
         );
       })}

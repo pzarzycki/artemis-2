@@ -6,6 +6,10 @@ function formatVec3(v: [number, number, number], digits: number) {
   return `${v[0].toFixed(digits)}  ${v[1].toFixed(digits)}  ${v[2].toFixed(digits)}`;
 }
 
+function formatVec3InThousandKm(v: [number, number, number], digits: number) {
+  return formatVec3([v[0] / 1000, v[1] / 1000, v[2] / 1000], digits);
+}
+
 function wrapDegrees(angleDeg: number) {
   return ((angleDeg % 360) + 360) % 360;
 }
@@ -161,7 +165,7 @@ export default function CameraPanel() {
         <div className={styles.directionRow}>
           <Tooltip
             className={styles.iconLabel}
-            text={`Camera position in ${referenceFrame}.\n${formatVec3(cameraPosition, 1)} km`}
+            text={`Camera position in ${referenceFrame}.\n${formatVec3InThousandKm(cameraPosition, 3)} x1000 km`}
           >
             <span className={styles.icon} aria-label="Camera position">
               <PositionGlyph />
@@ -169,9 +173,9 @@ export default function CameraPanel() {
           </Tooltip>
           <Tooltip
             className={styles.rowValue}
-            text={`Camera position in ${referenceFrame}.\n${formatVec3(cameraPosition, 1)} km`}
+            text={`Camera position in ${referenceFrame}.\n${formatVec3InThousandKm(cameraPosition, 3)} x1000 km`}
           >
-            <div className={`${styles.vector} mono`}>{formatVec3(cameraPosition, 1)}</div>
+            <div className={`${styles.vector} mono`}>{formatVec3InThousandKm(cameraPosition, 3)}</div>
           </Tooltip>
         </div>
 

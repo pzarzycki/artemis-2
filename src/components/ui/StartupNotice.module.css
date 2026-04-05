@@ -1,0 +1,57 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(3, 5, 10, 0.58);
+  z-index: 35;
+}
+
+.dialog {
+  width: min(420px, 100%);
+  overflow: hidden;
+}
+
+.header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(182, 225, 255, 0.14);
+  background:
+    radial-gradient(circle at top left, rgba(0, 212, 170, 0.12), transparent 44%),
+    linear-gradient(180deg, rgba(18, 28, 46, 0.98), rgba(12, 18, 31, 0.96));
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f4fbff;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 18px 18px;
+}
+
+.message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.button {
+  align-self: flex-end;
+  min-width: 108px;
+  padding: 9px 14px;
+  border: 1px solid rgba(0, 212, 170, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0, 212, 170, 0.22), rgba(0, 160, 128, 0.14));
+  color: #f4fbff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
