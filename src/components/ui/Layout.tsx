@@ -13,30 +13,33 @@ import CameraPanel from './CameraPanel';
 import StartupNotice from './StartupNotice';
 import styles from './Layout.module.css';
 
-const STARTUP_NOTICE_KEY = 'startup-notice-dismissed-v1';
-const MIN_DESKTOP_WIDTH = 900;
+const MIN_DESKTOP_WIDTH = 1100;
+const MIN_DESKTOP_HEIGHT = 700;
+
+function shouldShowStartupNotice() {
+  if (typeof window === 'undefined') return false;
+
+  const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+  const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  const isBelowMinimumDesktop =
+    viewportWidth < MIN_DESKTOP_WIDTH || viewportHeight < MIN_DESKTOP_HEIGHT;
+
+  return isPortrait || isBelowMinimumDesktop;
+}
 
 export default function Layout() {
   const [showStartupNotice, setShowStartupNotice] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (window.localStorage.getItem(STARTUP_NOTICE_KEY) === '1') return;
 
-    const isSmallViewport = window.innerWidth < MIN_DESKTOP_WIDTH;
-    const isPortrait = window.innerWidth < window.innerHeight;
-
-    if (isSmallViewport || isPortrait) {
+    if (shouldShowStartupNotice()) {
       setShowStartupNotice(true);
     }
   }, []);
 
-  const dismissStartupNotice = () => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STARTUP_NOTICE_KEY, '1');
-    }
-    setShowStartupNotice(false);
-  };
+  const dismissStartupNotice = () => setShowStartupNotice(false);
 
   return (
     <Suspense fallback={<LoadingOverlay message="Loading mission data…" />}>

@@ -19,7 +19,7 @@ export default function StartupNotice({ onDismiss }: StartupNoticeProps) {
         </div>
         <div className={styles.body}>
           <p className={styles.message}>
-            This experience works best in a desktop browser, or at least in a horizontal screen orientation.
+            This application works best on Desktop/Tablet, or at least in a horizontal screen orientation.
           </p>
           <button type="button" className={styles.button} onClick={onDismiss}>
             Continue

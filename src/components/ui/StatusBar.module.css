@@ -192,8 +192,83 @@
 }
 
 @media (max-width: 600px) {
-  .times .divider,
-  .times .timeItem:last-child {
+  .bar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 14px;
+    height: auto;
+    padding: 8px 12px;
+  }
+
+  .mission {
+    min-height: 30px;
+  }
+
+  .times {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .timeItem {
+    gap: 6px;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .status {
+    margin-left: 0;
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .externalGroup {
+    padding-right: 8px;
+  }
+
+  .learnBtn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bar {
+    gap: 8px 12px;
+  }
+
+  .name {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+  }
+
+  .times {
+    width: 100%;
+  }
+
+  .status {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .shareGroup {
+    gap: 4px;
+  }
+
+  .externalGroup {
+    gap: 4px;
+    padding-right: 6px;
+  }
+
+  .actionBtn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .tooltipButton::after {
     display: none;
   }
 }
