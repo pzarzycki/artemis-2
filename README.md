@@ -11,7 +11,10 @@ Real-time 3D mission tracker for NASA's Artemis II lunar flyby, built with React
 
 **[▶ Open live viewer](https://pzarzycki.github.io/artemis-2/)**
 
-![Artemis II viewer screenshot](docs/img/artemis-2-viewer-scr.png)
+| Earth View | Flyby View |
+| --- | --- |
+| ![Artemis II Earth screenshot](docs/img/artemis-2-earth-scr.jpg) | ![Artemis II flyby screenshot](docs/img/artemis-2-flyby-scr.jpg) |
+| ![Artemis II flyby screenshot 2](docs/img/artemis-2-flyby2-scr.jpg) | ![Artemis II live screenshot](docs/img/artemis-2-live-scr.jpg) |
 
 <details>
 <summary>About this README</summary>
