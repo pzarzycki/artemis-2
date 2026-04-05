@@ -2,6 +2,8 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { loadEnv } from 'vite';
 
+const GOOGLE_ANALYTICS_MEASUREMENT_ID = 'G-7SRMS46PEK';
+
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const defaultSiteUrl = 'https://pzarzycki.github.io/artemis-2/';
@@ -17,9 +19,32 @@ export default defineConfig(({ command, mode }) => {
       {
         name: 'project-html-meta',
         transformIndexHtml(html) {
-          return html
+          const transformedHtml = html
             .replaceAll('__APP_URL__', siteUrl)
             .replaceAll('__SOURCE_URL__', sourceUrl);
+
+          if (command !== 'build') {
+            return transformedHtml;
+          }
+
+          return {
+            html: transformedHtml,
+            tags: [
+              {
+                tag: 'script',
+                attrs: {
+                  async: true,
+                  src: `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ANALYTICS_MEASUREMENT_ID}`,
+                },
+                injectTo: 'head-prepend',
+              },
+              {
+                tag: 'script',
+                children: `window.dataLayer = window.dataLayer || [];\nfunction gtag(){dataLayer.push(arguments);}\ngtag('js', new Date());\ngtag('config', '${GOOGLE_ANALYTICS_MEASUREMENT_ID}');`,
+                injectTo: 'head-prepend',
+              },
+            ],
+          };
         },
       },
     ],

@@ -1,4 +1,5 @@
 import { useMissionTime } from '../../hooks/useMissionTime';
+import { trackAnalyticsEvent } from '../../lib/analytics';
 import { useMissionStore } from '../../store/missionStore';
 import { projectConfig } from '../../config/project';
 import ArtemisLogo from './ArtemisLogo';
@@ -54,6 +55,16 @@ export default function StatusBar() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const openLearnDialog = () => {
+    trackAnalyticsEvent('open_learn_dialog', { section: 'sources' });
+    openDialog('learn', 'sources');
+  };
+
+  const openSettingsDialog = () => {
+    trackAnalyticsEvent('open_settings_dialog');
+    openDialog('settings');
+  };
+
   return (
     <>
       <div className={styles.bar}>
@@ -83,7 +94,7 @@ export default function StatusBar() {
             type="button"
             className={`${styles.learnBtn} ${styles.tooltipButton}`}
             data-tooltip="Open Learn reference"
-            onClick={() => openDialog('learn', 'sources')}
+            onClick={openLearnDialog}
             aria-label="Open Learn reference"
           >
             <span>Learn</span>
@@ -92,7 +103,7 @@ export default function StatusBar() {
             type="button"
             className={`${styles.learnBtn} ${styles.tooltipButton}`}
             data-tooltip="Open scene settings"
-            onClick={() => openDialog('settings')}
+            onClick={openSettingsDialog}
             aria-label="Open scene settings"
           >
             <span>Settings</span>

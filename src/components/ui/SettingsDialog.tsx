@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMissionStore } from '../../store/missionStore';
 import { assetUrl } from '../../config/assets';
+import { trackAnalyticsEvent } from '../../lib/analytics';
 import {
   STAR_MAP_LAYER_LABELS,
   STAR_MAP_LAYER_OPTIONS,
@@ -159,6 +160,30 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
     return STAR_MAP_OPTIONS.filter((option) => deduped.has(option));
   }, [availableResolutions, starMapResolution]);
 
+  const handleStarMapLayerChange = (nextLayer: StarMapLayer) => {
+    if (nextLayer === starMapLayer) {
+      return;
+    }
+
+    trackAnalyticsEvent('change_skymap_texture', {
+      layer: nextLayer,
+      resolution: starMapResolution,
+    });
+    setStarMapLayer(nextLayer);
+  };
+
+  const handleStarMapResolutionChange = (nextResolution: StarMapResolution) => {
+    if (nextResolution === starMapResolution) {
+      return;
+    }
+
+    trackAnalyticsEvent('change_skymap_texture', {
+      layer: starMapLayer,
+      resolution: nextResolution,
+    });
+    setStarMapResolution(nextResolution);
+  };
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div
@@ -216,14 +241,14 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
                 label="Star Map Layer"
                 description="Chooses the celestial NASA sky layer."
                 value={starMapLayer}
-                onChange={setStarMapLayer}
+                onChange={handleStarMapLayerChange}
               />
               <ResolutionRow
                 label="Star Map Resolution"
                 description="Selects the skymap resolution."
                 value={starMapResolution}
                 isLoading={isStarMapLoading}
-                onChange={setStarMapResolution}
+                onChange={handleStarMapResolutionChange}
                 options={visibleResolutions}
               />
             </div>
