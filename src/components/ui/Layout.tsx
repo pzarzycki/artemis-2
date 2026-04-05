@@ -14,7 +14,7 @@ import StartupNotice from './StartupNotice';
 import styles from './Layout.module.css';
 
 const MIN_DESKTOP_WIDTH = 1100;
-const MIN_DESKTOP_HEIGHT = 700;
+const MIN_DESKTOP_HEIGHT = 650;
 
 function shouldShowStartupNotice() {
   if (typeof window === 'undefined') return false;
