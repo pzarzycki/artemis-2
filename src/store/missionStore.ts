@@ -6,7 +6,7 @@ import type { StarMapResolution } from '../config/starmaps';
 export type CameraTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
 export type MissionMode = 'live' | 'scrub';
 export type ReferenceFrame = 'GCRS' | 'BCRS';
-export type LearnSection = 'world' | 'frames' | 'data' | 'camera' | 'planning';
+export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'camera' | 'planning';
 export type ActiveDialog = 'learn' | 'settings' | null;
 
 interface MissionState {
@@ -74,7 +74,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   cameraAimDirection: null,
   cameraAimRequestId: 0,
   activeDialog: null,
-  learnSection: 'world',
+  learnSection: 'sources',
 
   setCurrentJD: (jd) => set({ currentJD: jd }),
   setMode: (mode) =>

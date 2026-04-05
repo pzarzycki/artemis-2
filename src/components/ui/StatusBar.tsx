@@ -30,6 +30,15 @@ function GitHubIcon() {
   );
 }
 
+function YouTubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={styles.actionIcon} aria-hidden="true">
+      <path d="M21 8.5c0-1.2-.9-2.2-2.1-2.4A58 58 0 0 0 12 5.8a58 58 0 0 0-6.9.3A2.4 2.4 0 0 0 3 8.5v7c0 1.2.9 2.2 2.1 2.4a58 58 0 0 0 6.9.3 58 58 0 0 0 6.9-.3A2.4 2.4 0 0 0 21 15.5v-7Z" />
+      <path d="M10.3 9.3v5.4l5-2.7-5-2.7Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export default function StatusBar() {
   const { utcString, metString } = useMissionTime();
   const mode = useMissionStore((s) => s.mode);
@@ -74,7 +83,7 @@ export default function StatusBar() {
             type="button"
             className={`${styles.learnBtn} ${styles.tooltipButton}`}
             data-tooltip="Open Learn reference"
-            onClick={() => openDialog('learn', 'world')}
+            onClick={() => openDialog('learn', 'sources')}
             aria-label="Open Learn reference"
           >
             <span>Learn</span>
@@ -88,10 +97,21 @@ export default function StatusBar() {
           >
             <span>Settings</span>
           </button>
+          <div className={styles.externalGroup}>
+            <button
+              type="button"
+              className={`${styles.actionBtn} ${styles.youtubeBtn} ${styles.tooltipButton}`}
+              onClick={() => openExternal('https://www.youtube.com/watch?v=m3kR2KK8TEs')}
+              aria-label="Watch NASA's Artemis II Live Mission Coverage"
+              data-tooltip="Watch NASA's Artemis II Live Mission Coverage"
+            >
+              <YouTubeIcon />
+            </button>
+          </div>
           <div className={styles.shareGroup}>
             <button
               type="button"
-              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              className={`${styles.actionBtn} ${styles.shareBtn} ${styles.tooltipButton}`}
               onClick={() => openExternal(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`)}
               aria-label="Share on LinkedIn"
               data-tooltip="Share the live mission viewer on LinkedIn"
@@ -100,7 +120,7 @@ export default function StatusBar() {
             </button>
             <button
               type="button"
-              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              className={`${styles.actionBtn} ${styles.shareBtn} ${styles.tooltipButton}`}
               onClick={() => openExternal(`https://x.com/intent/post?text=${shareText}&url=${shareUrl}`)}
               aria-label="Share on X"
               data-tooltip="Share the live mission viewer on X"
@@ -109,7 +129,7 @@ export default function StatusBar() {
             </button>
             <button
               type="button"
-              className={`${styles.shareBtn} ${styles.tooltipButton}`}
+              className={`${styles.actionBtn} ${styles.shareBtn} ${styles.tooltipButton}`}
               onClick={() => openExternal(projectConfig.sourceUrl)}
               aria-label="Open source code"
               data-tooltip="See source on GitHub"

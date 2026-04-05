@@ -12,7 +12,13 @@ interface MarkdownRendererProps {
 export default function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
   return (
     <div className={`${styles.markdown} ${className ?? ''}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          a: (props) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+        }}
+      >
         {content}
       </ReactMarkdown>
     </div>

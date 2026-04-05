@@ -1,17 +1,31 @@
 import json
 import math
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "public" / "assets" / "data"
+KERNELS_DIR = ROOT / "scripts" / "kernels"
 MOON_RADIUS_KM = 1737.4
 
 
 def load_json(name: str) -> dict:
     with (DATA_DIR / name).open() as fh:
         return json.load(fh)
+
+
+def jd_to_utc_iso(jd: float) -> str:
+    dt = datetime.fromtimestamp((jd - 2440587.5) * 86400.0, tz=timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+
+def angular_error_deg(a: tuple[float, float, float], b: tuple[float, float, float]) -> float:
+    dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    mag = math.sqrt(a[0] ** 2 + a[1] ** 2 + a[2] ** 2) * math.sqrt(b[0] ** 2 + b[1] ** 2 + b[2] ** 2)
+    cosang = max(-1.0, min(1.0, dot / mag))
+    return math.degrees(math.acos(cosang))
 
 
 class ScienceDataTests(unittest.TestCase):
@@ -74,6 +88,119 @@ class ScienceDataTests(unittest.TestCase):
                 f"at sample {min_sample[0]} (JD {min_sample[1]:.6f})."
             ),
         )
+
+    def test_earth_rotation_samples_match_direct_spice(self) -> None:
+        try:
+            import spiceypy as spice
+        except ModuleNotFoundError:
+            self.skipTest("spiceypy is not installed")
+        ephemeris = load_json("ephemeris.json")
+
+        kernel_paths = sorted(KERNELS_DIR.glob("*"))
+        if not kernel_paths:
+            self.skipTest("SPICE kernels are not available in scripts/kernels")
+
+        for path in kernel_paths:
+            spice.furnsh(str(path))
+
+        try:
+            sample_indices = [0, 1, 12, 96, 288, 576, ephemeris["count"] - 1]
+            step_days = ephemeris["intervalHours"] / 24.0
+
+            for i in sample_indices:
+                jd = ephemeris["startJD"] + i * step_days
+                et = spice.str2et(jd_to_utc_iso(jd))
+
+                rot = spice.pxform("J2000", "IAU_EARTH", et)
+                gmst_spice = math.atan2(-rot[1][0], rot[0][0])
+                if gmst_spice < 0:
+                    gmst_spice += 2 * math.pi
+
+                gmst_data = ephemeris["gmstRad"][i] % (2 * math.pi)
+                delta = ((gmst_data - gmst_spice + math.pi) % (2 * math.pi)) - math.pi
+
+                self.assertLess(
+                    abs(math.degrees(delta)),
+                    1e-3,
+                    f"Earth rotation sample {i} disagrees with direct SPICE by {math.degrees(delta):.6e} deg",
+                )
+        finally:
+            spice.kclear()
+
+    def test_moon_orientation_samples_match_direct_spice(self) -> None:
+        try:
+            import spiceypy as spice
+        except ModuleNotFoundError:
+            self.skipTest("spiceypy is not installed")
+        ephemeris = load_json("ephemeris.json")
+
+        kernel_paths = sorted(KERNELS_DIR.glob("*"))
+        if not kernel_paths:
+            self.skipTest("SPICE kernels are not available in scripts/kernels")
+
+        for path in kernel_paths:
+            spice.furnsh(str(path))
+
+        try:
+            sample_indices = [0, 1, 12, 96, 288, 576, ephemeris["count"] - 1]
+            step_days = ephemeris["intervalHours"] / 24.0
+            deg = math.pi / 180.0
+
+            for i in sample_indices:
+                jd = ephemeris["startJD"] + i * step_days
+                et = spice.str2et(jd_to_utc_iso(jd))
+
+                moon_rot = spice.pxform("J2000", "IAU_MOON", et)
+                body_x_spice = (moon_rot[0][0], moon_rot[0][1], moon_rot[0][2])
+                body_z_spice = (moon_rot[2][0], moon_rot[2][1], moon_rot[2][2])
+
+                pole_ra, pole_dec, w = ephemeris["moonOrientation"][i]
+                alpha = (pole_ra + 90.0) * deg
+                delta = (90.0 - pole_dec) * deg
+                spin = w * deg
+
+                cz1, sz1 = math.cos(alpha), math.sin(alpha)
+                cx, sx = math.cos(delta), math.sin(delta)
+                cz2, sz2 = math.cos(spin), math.sin(spin)
+
+                rz1 = (
+                    (cz1, -sz1, 0.0),
+                    (sz1,  cz1, 0.0),
+                    (0.0,  0.0, 1.0),
+                )
+                rx = (
+                    (1.0, 0.0, 0.0),
+                    (0.0,  cx, -sx),
+                    (0.0,  sx,  cx),
+                )
+                rz2 = (
+                    (cz2, -sz2, 0.0),
+                    (sz2,  cz2, 0.0),
+                    (0.0,  0.0, 1.0),
+                )
+
+                def mm(a: tuple[tuple[float, float, float], ...], b: tuple[tuple[float, float, float], ...]):
+                    return tuple(
+                        tuple(sum(a[r][k] * b[k][c] for k in range(3)) for c in range(3))
+                        for r in range(3)
+                    )
+
+                m = mm(mm(rz1, rx), rz2)
+                body_x = (m[0][0], m[1][0], m[2][0])
+                body_z = (m[0][2], m[1][2], m[2][2])
+
+                self.assertLess(
+                    angular_error_deg(body_z, body_z_spice),
+                    1e-3,
+                    f"Moon pole sample {i} disagrees with direct SPICE",
+                )
+                self.assertLess(
+                    angular_error_deg(body_x, body_x_spice),
+                    1e-3,
+                    f"Moon prime-meridian axis sample {i} disagrees with direct SPICE",
+                )
+        finally:
+            spice.kclear()
 
 
 if __name__ == "__main__":

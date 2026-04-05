@@ -16,32 +16,22 @@ Real-time 3D mission tracker for NASA's Artemis II lunar flyby, built with React
 <details>
 <summary>About this README</summary>
 
-This README is the project specification and repository guide. It defines the scientific coordinate and time contracts used by the app, the meaning of each major dataset and texture, the WebGL/rendering convention, and the deployment contract for the GitHub Pages build. It also notes where the current implementation still deviates from that target model.
+This README defines the scientific frames, time conventions, data products, and texture-registration assumptions used by the viewer.
 
 </details>
 
 ## Project Overview
 
-The application currently renders:
+The application renders Earth, Moon, Sun, the Artemis II spacecraft, mission trajectory, a celestial background map, and orientation helpers.
 
-- Earth
-- Moon
-- Sun
-- Artemis II spacecraft
-- mission trajectory
-- celestial background sky map
-- world-axis and ecliptic orientation helpers
+The scientific contract covers:
 
-The rendering has explicit contracts for:
-
-- frame origin
-- frame orientation
-- handedness
-- time scale
-- translational ephemerides
-- body-fixed rotations
+- frame origin and handedness
+- inertial and body-fixed orientation
+- time conventions
+- ephemeris provenance
 - texture registration
-- camera reporting and targeting
+- camera reporting in the selected frame
 
 ## Deployment
 
@@ -106,7 +96,7 @@ The rendering requires:
 
 The renderer uses WebGL through Three.js / React Three Fiber.
 
-The project-wide render convention is:
+Project-wide render convention:
 
 - right-handed
 - `+X` = red
@@ -114,34 +104,21 @@ The project-wide render convention is:
 - `+Z` = blue
 - `+Z` is the app-wide up direction
 
-Three.js camera convention still matters:
+Camera convention:
 
 - an unrotated camera looks along `-Z`
-- screen up is a camera/view convention, not a scientific axis
 - this project explicitly sets the camera up vector to `(0, 0, 1)`
-- the camera local coordinate system is right-handed
-- local `-Z` is the viewing / optical axis
 - local `+X` is camera-right
 - local `+Y` is camera-up
+- local `-Z` is the viewing axis
 
-Therefore the rule for this app is:
+Presentation rule:
 
 - the selected scientific Cartesian frame is mapped directly into the render world without handedness flips or hidden axis swaps
 - any helper indicator shown in the app must respect that same right-handed `Z-up` convention
 - camera position and world-space camera orientation vectors are reported in the currently selected scene frame
 - the camera panel reports orientation primarily as `RA/Dec` angles of the corresponding world-space direction vectors
-- those `RA/Dec` values are expressed in decimal degrees in the selected inertial frame, with Cartesian vectors available as secondary detail
-- camera direction input accepts either decimal degrees or `deg min` sexagesimal-like pairs and is converted to a unit vector before being applied
-
-## Learn Surface
-
-The in-app `Learn` dialog is intended to summarize the same contracts defined here:
-
-- render-world handedness and axis colors
-- camera local axes and world-space orientation readout
-- geocentric and barycentric inertial frames
-- Earth-fixed and Moon-fixed rotational frames
-- ephemeris/data products from SPICE, Horizons, and the celestial background map
+- those `RA/Dec` values are expressed in decimal degrees in the selected inertial frame
 
 ## External References
 
@@ -164,138 +141,51 @@ The in-app `Learn` dialog is intended to summarize the same contracts defined he
 
 ## 1. Main World Coordinate System
 
-### 1.1 Default world frame
-
-The intended default world frame is:
-
-- Earth-centered
-- inertial for rendering
-- aligned to the `ICRS` axes
-- represented in practical SPICE/Horizons `J2000` coordinates
-- right-handed
-- Cartesian
-- kilometers
-
-For this project, that means:
+The default scene is an Earth-centered inertial Cartesian frame aligned with practical `J2000/ICRF` axes:
 
 - origin: Earth center of mass
-- `+X`: ICRS / practical `J2000` x-axis
-- `+Y`: ICRS / practical `J2000` y-axis
-- `+Z`: ICRS / practical `J2000` north axis
-
-Frame properties:
-
+- `+X`: practical `J2000` x-axis
+- `+Y`: practical `J2000` y-axis
+- `+Z`: north celestial pole
 - handedness: right-handed
-- render orientation: identical axis directions in the app world
+- units: kilometers
 
-Important point from NAIF:
+In the renderer, this scientific frame is mapped directly into the Three.js world without handedness flips or hidden axis swaps. The app UI label `GCRS` should be read in this practical sense: Earth-centered, inertial, and `J2000/ICRF`-aligned for ephemeris work.
 
-- SPICE `J2000` is treated as practically aligned with the `ICRF` for ordinary ephemeris work
-- the offset is very small, below the level that matters for this visualization unless we explicitly pursue sub-arcsecond frame rigor
+Earth stays at `(0, 0, 0)` in this mode. Earth rotation is applied separately through the Earth body-fixed frame:
 
-So the operational scene frame is:
-
-- `Earth-centered, J2000/ICRF-aligned inertial Cartesian frame`
-
-If the UI says `GCRS`, that should be understood in this practical sense unless and until the full relativistic/time-scale treatment is implemented.
-
-### 1.2 Earth location in the world frame
-
-In the default world frame:
-
-- Earth is always at `(0, 0, 0)`
-
-That is not an approximation. It is the definition of the geocentric scene.
-
-### 1.3 Earth orientation in the world frame
-
-Earth orientation is a separate question from the inertial world frame.
-
-The world frame tells us where Earth is.
-Earth rotation tells us how the Greenwich meridian and terrestrial longitudes are oriented inside that world frame.
-
-For Earth, the intended meaning is:
-
-- Earth spin axis is the inertial `+Z` axis
-- Greenwich rotates about that axis according to Earth rotation
-- the body-fixed Earth frame is mapped into the inertial frame using Earth rotation angle / Greenwich sidereal angle
-
-Earth body-fixed convention used by this project:
-
-- right-handed
 - `+Z`: terrestrial north pole
 - `+X`: equator / Greenwich meridian intersection
 - `+Y`: equator / `90°E`
 
-In the current code path, Earth rotation is represented by a single z-rotation using `gmstRad`.
+The stored Earth orientation quantity is `gmstRad`, derived from the SPICE `J2000 -> IAU_EARTH` transform and applied as a rotation about inertial `+Z`. At the current dataset start (`JD 2461131.5`, i.e. `2026-04-01 00:00:00 UTC`), `gmstRad = 2.99047432 rad`, so the Greenwich meridian points at inertial right ascension `171.341557°`.
 
-### 1.4 Day zero
+The app's geographic readouts are spherical rather than geodetic:
 
-The current generated ephemeris file in this repo starts at:
+- latitude from the equator
+- east-positive longitude from `atan2(y, x)` in Earth-fixed coordinates
+- altitude above a fixed spherical Earth radius
 
-- `JD = 2461131.5`
-
-The app currently interprets that as:
-
-- `2026-04-01 00:00:00 UTC`
-
-At that epoch, the stored Earth rotation angle is:
-
-- `gmstRad = 2.99047432 rad`
-- `gmstDeg = 171.341557278°`
-
-With the current Earth rotation convention in the code:
-
-- the Greenwich meridian points in inertial right ascension `171.341557°`
-- inertial `+X` corresponds to Earth-fixed longitude `-171.341557°`
-- equivalently, inertial `+X` corresponds to longitude `188.658443°E`
-- equivalently, inertial `+X` corresponds to longitude `171.341557°W`
-
-That is the exact orientation of Earth in the current generated dataset at the current day zero.
-
-### 1.5 Latitude / longitude convention
-
-The current geographic convention used by the app is:
-
-- latitude from equator toward north/south
-- longitude computed by `atan2(y, x)` in Earth-fixed coordinates
-- spherical Earth, not ellipsoidal WGS84
-
-So the current geographic outputs are:
-
-- spherical latitude
-- east-positive longitude
-- spherical altitude above a fixed Earth radius
-
-That is adequate for visualization, but it is not a geodetic Earth model.
+That is sufficient for visualization, but it is not a WGS84 geodetic model.
 
 ## 2. Sun Position
 
-The Sun vector in the default scene is defined as:
+The Sun state used by the default scene is:
 
 - Sun center relative to Earth center
-- expressed in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
+- expressed in the same Earth-centered practical `J2000/ICRF` inertial frame
 - units in kilometers
 
-Primary source:
+Source:
 
 - SPICE `DE440`
-- obtained in the pipeline with target `Sun`, observer `Earth center`, frame `"J2000"`
+- queried in the pipeline with target `Sun`, observer `Earth center`, frame `"J2000"`
 
-Meaning:
-
-- this is a geocentric inertial Sun state
-- it is not heliocentric
-- it is not barycentric
-- when rotated into mean ecliptic-of-J2000 coordinates, it should remain close to the ecliptic plane
-
-What the app uses this vector for:
+The same Sun vector drives:
 
 - main directional light
 - visible Sun marker
 - day/night illumination direction on Earth and Moon
-
-Those three uses must always come from the same Sun vector.
 
 ### 2.1 Celestial Background
 
@@ -318,30 +208,23 @@ App mapping rule:
 - world `+Y` = `RA 6h`, `Dec 0°`
 - world `+Z` = north celestial pole
 
-Because the NASA map has right ascension increasing to the left, the texture must be mirrored horizontally when applied to the inside of the sky sphere so that increasing right ascension matches the app's right-handed `+X/+Y/+Z` world convention.
+Because the NASA map has right ascension increasing to the left, the sky texture must be mirrored horizontally when applied to the inside of the sphere so that increasing right ascension matches the app's right-handed `+X/+Y/+Z` convention.
 
 ## 3. Moon Position and Orientation
 
 ### 3.1 Moon position
 
-The Moon vector in the default scene is defined as:
+The Moon state used by the default scene is:
 
 - Moon center relative to Earth center
-- expressed in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
+- expressed in the same Earth-centered practical `J2000/ICRF` inertial frame
 - units in kilometers
 
-Primary source:
+Source:
 
 - local SPICE computation via `spkez(MOON, et, "J2000", "NONE", EARTH)`
-- script: `scripts/fetch_ephemeris.py`
 
 Moon position is **not** fetched from Horizons.
-
-Meaning:
-
-- this is a geocentric inertial Moon state
-- it is not Earth-Moon barycenter relative
-- it is not Solar System barycenter relative
 
 External verification:
 
@@ -350,20 +233,10 @@ External verification:
 
 ### 3.2 Moon orientation
 
-Moon orientation is not determined by the translational Moon position.
-It is determined by a lunar body-fixed rotational model.
-
-The intended lunar orientation model is:
+Moon rotation is independent of the translational Moon position. The app uses the standard lunar body-fixed frame:
 
 - IAU lunar pole and prime meridian convention via SPICE `IAU_MOON` body-fixed frame
 - computed locally via `pxform("J2000", "IAU_MOON", et)`
-- script: `scripts/fetch_ephemeris.py`
-
-The orientation pipeline therefore means:
-
-- first define the Moon-fixed frame from pole and prime meridian
-- then rotate that Moon-fixed frame into the inertial world frame
-- then apply the lunar albedo/normal textures in that Moon-fixed frame
 
 Moon body-fixed convention used by this project:
 
@@ -372,35 +245,33 @@ Moon body-fixed convention used by this project:
 - `+X`: lunar prime meridian on the equator
 - `+Y`: equator / `90°E`
 
+In the renderer, the Moon body frame is separated from the sphere-mesh correction used to map the equirectangular texture onto Three.js `SphereGeometry`. That keeps the displayed local axes tied to the physical lunar frame rather than to the mesh's native `+Y` pole.
+
 ### 3.3 Moon texture registration
 
-The Moon texture is not arbitrary decoration.
-It is part of the Moon-fixed frame definition.
-
-The intended texture convention is:
+The Moon texture is part of the Moon-fixed frame definition. It is assumed to be:
 
 - equirectangular longitude-latitude map
 - north at top
 - south at bottom
 - longitude `0°` aligned with the lunar prime meridian
 
-The NASA SVS CGI Moon Kit page states that the published Moon map is centered on `0° longitude`, which is exactly the cartographic condition needed for a correct Moon-fixed texture.
+The NASA SVS CGI Moon Kit page states that the published Moon map is centered on `0° longitude`, which is the required cartographic condition for this frame.
 
-## 4. Spacecraft Trajectory
+## 4. Spacecraft Trajectory and Orientation
 
-The spacecraft trajectory in the default scene is defined as:
+The spacecraft trajectory used by the default scene is:
 
 - spacecraft relative to Earth geocenter
 - expressed in practical `J2000` / `ICRF`-aligned coordinates
 - position in km
 - velocity in km/s
 
-Primary source:
+Source:
 
 - JPL Horizons REST API (`https://ssd.jpl.nasa.gov/api/horizons.api`)
-- script: `scripts/fetch_trajectory.py`
 
-The authoritative Horizons target is `-1024`, and Horizons also resolves `Artemis II` to the same spacecraft identity. Other mission aliases such as `Integrity` and `EM-2` may be accepted by Horizons, but the documented data pipeline uses `COMMAND = -1024`.
+The documented target is `COMMAND = -1024`, which is the Horizons / NAIF identifier for Artemis II. Horizons also resolves `Artemis II`, and may accept mission aliases such as `Integrity` and `EM-2`.
 
 **Trajectory coverage:** data starts after ICPS separation, `3h 24m 18s` after launch (`2026-Apr-1 @ 22:24 UTC`), i.e. from approximately `2026-Apr-2 @ 01:48 UTC`. No trajectory data is available prior to ICPS separation.
 
@@ -413,22 +284,7 @@ The Horizons configuration used for this project is geocentric:
 - `REF_PLANE = FRAME`
 - `OUT_UNITS = KM-S`
 
-Those query semantics mean:
-
-- `COMMAND` selects the spacecraft target
-- `CENTER = 500@399` requests vectors relative to Earth center
-- `REF_SYSTEM = J2000` keeps the output axes aligned with the practical inertial frame used elsewhere in the app
-- `REF_PLANE = FRAME` keeps the vector plane tied to the Horizons frame definition used by the query
-- `OUT_UNITS = KM-S` returns kilometers and kilometers per second
-
-That means:
-
-- origin = Earth center
-- axes = `J2000`
-- state = geocentric inertial
-- units = km and km/s
-
-This is the correct source for the spacecraft trajectory in the geocentric world view.
+That yields a geocentric inertial spacecraft state in the same `J2000/ICRF`-aligned frame used elsewhere in the app.
 
 Mission-validity condition for this dataset:
 
@@ -439,33 +295,20 @@ Mission-validity condition for this dataset:
 
 ### 4.1 Spacecraft orientation
 
-The spacecraft's rendered orientation is a different problem from its translational state.
-
-At present, unless a true attitude product is available, the spacecraft orientation is a visualization rule:
+The app does not currently use an authoritative spacecraft attitude product. The rendered spacecraft orientation is therefore synthetic:
 
 - point the model approximately along the velocity vector
 
-That is acceptable as a debug visualization, but it must not be described as true spacecraft attitude unless a real attitude source is added.
+That is acceptable for visualization, but it must not be described as true Orion attitude.
 
-## 5. BCRS: What It Means and What It Requires
+## 5. BCRS Mode
 
-### 5.1 What BCRS means
-
-`BCRS` is the barycentric celestial reference system:
+`BCRS` is the barycentric scene mode:
 
 - origin at the Solar System barycenter
 - axes aligned with the `ICRS`
 
-So in a practical app:
-
-- the axes remain essentially `ICRS` / practical `J2000`
-- the origin changes from Earth center to Solar System barycenter
-- the state vectors for Earth, Moon, Sun, and spacecraft must all be recomputed or transformed into that same barycentric frame
-- time handling must remain consistent
-
-### 5.2 What is needed for a true barycentric mode
-
-To render a true barycentric scene, the project needs:
+For a true barycentric mode, the project needs:
 
 - `Earth_BCRS(t)` = Earth center relative to Solar System barycenter
 - `Moon_BCRS(t)` = Moon center relative to Solar System barycenter
@@ -474,43 +317,23 @@ To render a true barycentric scene, the project needs:
 
 All of these must be evaluated at the same epoch in the same time convention.
 
-### 5.3 How the geocentric states relate to barycentric states
-
-Ignoring the deeper relativistic distinctions for a moment, the spatial relation is:
+In the current implementation, barycentric positions are constructed from the geocentric states using:
 
 - `Moon_BCRS(t) = Earth_BCRS(t) + Moon_geocentric(t)`
 - `SC_BCRS(t) = Earth_BCRS(t) + SC_geocentric(t)`
 
-This is only valid if:
-
-- all vectors are expressed in the same aligned axes
-- all vectors are evaluated at the same epoch
-- all time tags have already been converted consistently
-
-If one dataset is tagged in UTC-like JD and another in TDB JD but the app treats both as the same scalar, the resulting barycentric scene is wrong even if the vector addition looks algebraically correct.
-
-### 5.4 What changes in BCRS mode
-
-In a true barycentric mode:
+In a true barycentric scene:
 
 - Earth is no longer at the origin
 - Moon is no longer geocentric by construction
 - spacecraft is no longer geocentric by construction
 - the Sun is no longer just a geocentric direction vector
 
-Therefore:
-
-- every trajectory in the scene changes
-- the Earth, Moon, and spacecraft translational states all need barycentric forms
-- only body rotation models remain attached to the bodies themselves
-
-The Earth texture still represents Earth-fixed longitude.
-The Moon texture still represents Moon-fixed longitude.
-Barycentric mode changes body positions, not the meaning of the body-fixed texture grids.
+Body rotation models do not change in barycentric mode. Earth texture still means Earth-fixed longitude, and Moon texture still means Moon-fixed longitude.
 
 ## Frame Inventory and Handedness
 
-The frames used or planned in this project are:
+Frames used by the application:
 
 - app render world: right-handed, `+Z` up
 - practical geocentric inertial frame (`GCRS` in the UI): right-handed, Earth-centered, `J2000/ICRF`-aligned
@@ -519,62 +342,23 @@ The frames used or planned in this project are:
 - Moon body-fixed frame: right-handed, rotating with Moon
 - mean ecliptic-of-J2000 helper frame: right-handed, obtained from the equatorial frame by rotation about `+X` by the obliquity
 
-This means the ecliptic helper in the app must obey:
-
-- it contains the `+X` axis
-- it is not defined by rotation about `+Y`
-- its normal is the equatorial `+Z` axis rotated toward `-Y` by the obliquity in this convention
-
 ## Time System
 
-### User-facing time
-
-The UI uses:
-
-- UTC
-
-That is correct for:
-
-- mission event labels
-- readable timestamps
-- mission elapsed time display
-
-### Ephemeris time
-
-The underlying ephemeris sources are not plain UTC clocks.
-
-For SPICE and Horizons state vectors, the practical dynamical time convention is:
-
-- TDB-like ephemeris time
+The UI uses UTC for mission timestamps and labels.
 
 Horizons vector epochs are reported in `JDTDB`, so trajectory epochs are not plain UTC Julian dates.
 
 Trajectory start `JD 2461132.584028`, interpreted as `JDTDB`, corresponds to about `2026-04-02T01:59:50.834 UTC`.
 
-In the current SPICE generation path, feeding a UTC-derived JD to SPICE as `JDTDB` creates about a `69.186 s` offset around `2026-04-01`. That is a real issue in the current pipeline.
+In the current SPICE generation path, each UTC sample instant is converted explicitly to SPICE ephemeris time before evaluating the Earth, Moon, and Sun states. That avoids the earlier `~69 s` class of error that appears when a UTC-facing Julian date is misused as if it were already `JDTDB`.
 
-The rule is:
-
-- UI time may be UTC
-- ephemeris lookup time must be explicitly converted to the ephemeris time scale before state-vector evaluation
-
-### Earth rotation time
-
-Earth rotation is not driven by TDB.
-Earth longitude orientation belongs to Earth rotation, which is conventionally tied to:
-
-- UT1 / Earth rotation angle / sidereal angle
-
-For a physically rigorous Earth texture orientation, the app must distinguish:
-
-- inertial ephemeris lookup time
-- Earth rotation time
+Earth orientation is a separate timing problem from inertial state-vector evaluation. In physical terms, Earth longitude belongs to Earth rotation time (`UT1` / sidereal angle), not to the dynamical ephemeris time scale.
 
 ## Texture and Cartography Requirements
 
 ### Earth
 
-The Earth texture stack must be treated as a single registered cartographic product:
+The Earth texture stack is treated as a single registered cartographic product:
 
 - day map
 - night map
@@ -588,44 +372,28 @@ All of them must share:
 - the same zero meridian
 - the same north-up orientation
 
-In this project, the current code assumes:
+Current assumptions:
 
 - equirectangular Earth maps
 - prime meridian at the horizontal center of the map
 - map center aligned to body `+X`
 
-That assumption must be verified against the actual Earth texture source metadata to confirm the Earth texture is correctly registered.
-
-At the moment, the Moon texture registration is better documented than the Earth texture registration.
+The renderer applies the body-frame rotation separately from the sphere-mesh correction that maps cartographic north from Three.js local `+Y` to body `+Z`. The remaining open question is the source texture registration itself: the current pipeline still assumes Greenwich is centered, but that has not yet been fully proven from source metadata.
 
 ### Moon
 
-The Moon texture stack is intended to be:
+The Moon texture stack is assumed to be:
 
 - equirectangular
 - north-up
 - `0°` longitude correctly centered
 - normal map aligned to the exact same grid as the color map
 
-This requirement is strict because Moon orientation debugging depends on it.
+The Moon texture registration is better documented than the Earth texture registration because the NASA SVS CGI Moon Kit explicitly states the `0°`-centered cartographic condition.
 
-## Debugging Aids
+## Body-Fixed Axis Conventions
 
-For scientific debugging, the scene should always expose:
-
-- a small world-axis indicator in the top-right
-- Earth local axes
-- Moon local axes
-- spacecraft local axes
-
-These are not cosmetic.
-They are the easiest way to verify:
-
-- inertial frame orientation
-- body-fixed orientation
-- synthetic spacecraft local orientation
-
-Recommended local-axis conventions:
+The application uses the following local-axis conventions:
 
 | Object | Local frame to use | `+X` | `+Y` | `+Z` | Why |
 |---|---|---|---|---|---|
@@ -633,22 +401,13 @@ Recommended local-axis conventions:
 | Moon | Lunar body-fixed (`IAU_MOON`) | lunar prime meridian on equator | `90°E` lunar longitude | lunar north pole | Standard IAU/NAIF/SPICE cartographic frame |
 | Spacecraft | Synthetic flight frame unless true attitude is available | prograde (`v`) | `z × x` | orbit normal (`r × v`) | Gives all three axes a physical meaning without claiming true Orion attitude |
 
-Important nuance for Earth:
-
-- Earth local `+Z` should stay aligned with inertial world `+Z`
-- Earth local `+X/+Y` should rotate with Greenwich sidereal angle / Earth rotation angle
-- Earth local `+X/+Y` should **not** be forced to match inertial world `+X/+Y` at the start epoch unless Greenwich is intentionally redefined
-
-Important nuance for spacecraft:
-
-- trajectory alone does **not** define true spacecraft attitude
-- if real Orion attitude is unavailable, the local axes should be presented explicitly as a synthetic navigation/debug frame, not a NASA attitude product
+For Earth, local `+Z` stays aligned with inertial world `+Z`, while local `+X/+Y` rotate with Earth rotation. For spacecraft, trajectory alone does **not** define true attitude; the local frame is explicitly synthetic until an authoritative attitude source exists.
 
 ## Data Products
 
 ### `ephemeris.json`
 
-Intended meaning:
+`ephemeris.json` contains:
 
 - `moonPos...`: Moon relative to Earth center, inertial geocentric frame
 - `sunPos...`: Sun relative to Earth center, inertial geocentric frame
@@ -658,75 +417,15 @@ Intended meaning:
 
 ### `trajectory.json`
 
-Intended meaning:
+`trajectory.json` contains:
 
 - spacecraft position relative to Earth center
 - spacecraft velocity relative to Earth center
 - epoch tags associated with the declared ephemeris time convention
 - mission phase metadata for UI annotation
 
-## Current Implementation Status
+## Current Limits
 
-Known deviations from the target model:
-
-- the current `BCRS` selector is translation-only, not a true barycentric recomputation of all bodies
-- Earth geographic outputs are spherical, not geodetic
-- Earth texture zero-meridian registration is still assumed by the current pipeline rather than fully proven from source metadata
-- the authoritative ephemeris and trajectory generation paths are now strict: no analytical ephemeris fallback and no simulated trajectory fallback
-
-## Scientific Model Summary
-
-### 1. Main coordinate system
-
-The app's intended main scene is:
-
-- Earth-centered
-- inertial
-- `ICRS` / practical `J2000` aligned
-- kilometers
-
-Earth is at the origin.
-Earth orientation is applied separately through Earth rotation.
-At the current generated day zero `JD 2461131.5`, the stored Earth rotation angle is `171.341557278°`, which means the Greenwich meridian points at that inertial angle.
-
-### 2. Sun position
-
-The Sun vector should be:
-
-- Sun relative to Earth center
-- from SPICE `DE440` or equivalent Horizons geocentric vector data
-- in practical `J2000` / `ICRF`-aligned coordinates
-
-### 3. Moon position
-
-The Moon vector should be:
-
-- Moon relative to Earth center
-- from local SPICE `spkez(MOON, et, "J2000", "NONE", EARTH)`
-- in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
-
-Moon rotation is separate and should come from the IAU lunar body-fixed model or SPICE `IAU_MOON`.
-
-### 4. Spacecraft trajectory
-
-The spacecraft trajectory should be:
-
-- spacecraft relative to Earth center
-- from JPL Horizons target `-1024`
-- with Horizons also resolving `Artemis II` to the same spacecraft identity
-- using `COMMAND = -1024`, `CENTER = 500@399`, `REF_SYSTEM = J2000`, `REF_PLANE = FRAME`, `OUT_UNITS = KM-S`
-- in a practical `GCRS`-like / Earth-centered `J2000` / `ICRF`-aligned inertial frame
-- with epochs treated as `JDTDB`, not as naive UTC JD
-
-### 5. BCRS
-
-A true `BCRS` mode requires:
-
-- Earth barycentric state
-- Moon barycentric state
-- spacecraft barycentric state
-- consistent time conversion
-
-It is not just a translation.
-Every body trajectory changes.
-Body textures do not change meaning, but all translational states must be recomputed in the barycentric frame.
+- The current `BCRS` selector is still translation-based rather than a full barycentric recomputation of every body state.
+- Earth geographic outputs are spherical, not geodetic.
+- Earth texture zero-meridian registration is still assumed from the current source textures rather than proven from source metadata.

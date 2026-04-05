@@ -78,13 +78,22 @@
   flex-shrink: 0;
 }
 
+.externalGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 10px;
+  margin-right: 2px;
+  border-right: 1px solid var(--border);
+}
+
 .shareGroup {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.shareBtn {
+.actionBtn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,8 +102,19 @@
   padding: 0;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.04);
   color: var(--text-primary);
+}
+
+.shareBtn {
+  border-color: rgba(124, 181, 255, 0.22);
+  background: rgba(84, 140, 255, 0.08);
+  color: #d7e7ff;
+}
+
+.youtubeBtn {
+  border-color: rgba(255, 84, 84, 0.32);
+  background: rgba(255, 84, 84, 0.12);
+  color: #ffd7d7;
 }
 
 .shareBtn:disabled {
