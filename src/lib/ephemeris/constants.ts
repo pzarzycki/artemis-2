@@ -27,11 +27,89 @@ export const SPEED_OF_LIGHT_KM_S = 299_792.458;
 /** J2000 epoch as Julian Date */
 export const J2000_JD = 2_451_545.0;
 
-/** Orion Command Module diameter (m) */
-export const ORION_DIAMETER_M = 5.03;
+/** Orion Crew Module maximum diameter (m) */
+export const ORION_CM_DIAMETER_M = 5.02;
 
-/** Orion Service Module length (m) */
-export const ORION_SM_LENGTH_M = 4.78;
+/** Orion Crew Module overall height (m) */
+export const ORION_CM_HEIGHT_M = 3.3;
+
+/** Orion Crew Module forward docking tunnel diameter (m, approximate) */
+export const ORION_CM_NOSE_DIAMETER_M = 1.3;
+
+/** CM-ESM interface ring length (m, approximate visualized adapter section) */
+export const ORION_INTERFACE_RING_LENGTH_M = 0.35;
+
+/** Orion heat shield spherical-cap depth (m, approximate visual depth) */
+export const ORION_HEAT_SHIELD_DEPTH_M = 0.55;
+
+/** European Service Module diameter (m) */
+export const ORION_ESM_DIAMETER_M = 4.1;
+
+/** European Service Module body length (m) */
+export const ORION_ESM_LENGTH_M = 2.7;
+
+/** Main engine bell length (m, approximate visible nozzle) */
+export const ORION_MAIN_ENGINE_LENGTH_M = 0.8;
+
+/** Main engine exit diameter (m, approximate visible nozzle) */
+export const ORION_MAIN_ENGINE_EXIT_DIAMETER_M = 0.9;
+
+/** Solar array wing count */
+export const ORION_SOLAR_WING_COUNT = 4;
+
+/** Number of rectangular panels per deployed solar wing */
+export const ORION_SOLAR_PANELS_PER_WING = 3;
+
+/** Deployed length of each solar wing from root to tip (m) */
+export const ORION_SOLAR_WING_LENGTH_M = 7.0;
+
+/** Approximate width of each deployed solar wing (m) */
+export const ORION_SOLAR_WING_WIDTH_M = 2.0;
+
+/** Approximate panel thickness for the visual model (m) */
+export const ORION_SOLAR_PANEL_THICKNESS_M = 0.05;
+
+/** Approximate radial stand-off from the ESM hull to the array root (m) */
+export const ORION_SOLAR_ROOT_OFFSET_M = 0.35;
+
+/** Orion Crew Module maximum diameter (km) */
+export const ORION_CM_DIAMETER_KM = ORION_CM_DIAMETER_M / 1000;
+
+/** Orion Crew Module overall height (km) */
+export const ORION_CM_HEIGHT_KM = ORION_CM_HEIGHT_M / 1000;
+
+/** Orion Crew Module forward docking tunnel diameter (km) */
+export const ORION_CM_NOSE_DIAMETER_KM = ORION_CM_NOSE_DIAMETER_M / 1000;
+
+/** CM-ESM interface ring length (km) */
+export const ORION_INTERFACE_RING_LENGTH_KM = ORION_INTERFACE_RING_LENGTH_M / 1000;
+
+/** Orion heat shield spherical-cap depth (km) */
+export const ORION_HEAT_SHIELD_DEPTH_KM = ORION_HEAT_SHIELD_DEPTH_M / 1000;
+
+/** European Service Module diameter (km) */
+export const ORION_ESM_DIAMETER_KM = ORION_ESM_DIAMETER_M / 1000;
+
+/** European Service Module body length (km) */
+export const ORION_ESM_LENGTH_KM = ORION_ESM_LENGTH_M / 1000;
+
+/** Main engine bell length (km) */
+export const ORION_MAIN_ENGINE_LENGTH_KM = ORION_MAIN_ENGINE_LENGTH_M / 1000;
+
+/** Main engine exit diameter (km) */
+export const ORION_MAIN_ENGINE_EXIT_DIAMETER_KM = ORION_MAIN_ENGINE_EXIT_DIAMETER_M / 1000;
+
+/** Deployed length of each solar wing from root to tip (km) */
+export const ORION_SOLAR_WING_LENGTH_KM = ORION_SOLAR_WING_LENGTH_M / 1000;
+
+/** Approximate width of each deployed solar wing (km) */
+export const ORION_SOLAR_WING_WIDTH_KM = ORION_SOLAR_WING_WIDTH_M / 1000;
+
+/** Approximate panel thickness for the visual model (km) */
+export const ORION_SOLAR_PANEL_THICKNESS_KM = ORION_SOLAR_PANEL_THICKNESS_M / 1000;
+
+/** Approximate radial stand-off from the ESM hull to the array root (km) */
+export const ORION_SOLAR_ROOT_OFFSET_KM = ORION_SOLAR_ROOT_OFFSET_M / 1000;
 
 /** Obliquity of the ecliptic at J2000 epoch (radians) */
 export const OBLIQUITY_J2000_RAD = 23.439_291_1 * (Math.PI / 180);

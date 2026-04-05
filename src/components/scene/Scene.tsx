@@ -37,7 +37,7 @@ function CameraTelemetry() {
 
   useFrame(() => {
     const forward = new THREE.Vector3();
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+    const up = camera.up.clone().applyQuaternion(camera.quaternion).normalize();
     camera.getWorldDirection(forward);
     useMissionStore.getState().setCameraTelemetry(
       [camera.position.x, camera.position.y, camera.position.z],
@@ -51,6 +51,8 @@ function CameraTelemetry() {
 
 export default function Scene() {
   const cameraTarget = useMissionStore((s) => s.cameraTarget);
+  const cameraTargetSwitchMode = useMissionStore((s) => s.cameraTargetSwitchMode);
+  const consumeCameraTargetSwitchMode = useMissionStore((s) => s.consumeCameraTargetSwitchMode);
   const showStars = useMissionStore((s) => s.showStars);
   const showObjectAxes = useMissionStore((s) => s.showObjectAxes);
   const showTrajectory = useMissionStore((s) => s.showTrajectory);
@@ -81,8 +83,13 @@ export default function Scene() {
           orientation={scene.moonOrientation}
           showAxes={showObjectAxes}
         />
-        {scene.spacecraftWorld && scene.spacecraftVelECI && (
-          <Spacecraft position={scene.spacecraftWorld} velECI={scene.spacecraftVelECI} showAxes={showObjectAxes} />
+        {scene.spacecraftWorld && scene.spacecraftPosECI && scene.spacecraftVelECI && (
+          <Spacecraft
+            position={scene.spacecraftWorld}
+            posECI={scene.spacecraftPosECI}
+            velECI={scene.spacecraftVelECI}
+            showAxes={showObjectAxes}
+          />
         )}
         {showTrajectory && scene.trajectory && (
           <Trajectory
@@ -94,10 +101,12 @@ export default function Scene() {
 
         <CameraRig
           target={cameraTarget}
+          targetSwitchMode={cameraTargetSwitchMode}
           referenceFrame={scene.referenceFrame}
           earthWorld={scene.earthWorld}
           moonWorld={scene.moonWorld}
           spacecraftWorld={scene.spacecraftWorld}
+          consumeTargetSwitchMode={consumeCameraTargetSwitchMode}
         />
         <WorldHud />
       </Suspense>

@@ -4,6 +4,7 @@ import type { Vec3 } from '../lib/coordinates/types';
 import type { StarMapResolution } from '../config/starmaps';
 
 export type CameraTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
+export type CameraTargetSwitchMode = 'preset' | 'preserve-view';
 export type MissionMode = 'live' | 'scrub';
 export type ReferenceFrame = 'GCRS' | 'BCRS';
 export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'camera' | 'planning';
@@ -15,6 +16,7 @@ interface MissionState {
   playbackSpeed: number;
   isPlaying: boolean;
   cameraTarget: CameraTarget;
+  cameraTargetSwitchMode: CameraTargetSwitchMode;
   referenceFrame: ReferenceFrame;
   showStars: boolean;
   showObjectAxes: boolean;
@@ -36,7 +38,8 @@ interface MissionState {
   setMode: (mode: MissionMode) => void;
   setPlaybackSpeed: (speed: number) => void;
   setIsPlaying: (playing: boolean) => void;
-  setCameraTarget: (target: CameraTarget) => void;
+  setCameraTarget: (target: CameraTarget, options?: { preserveView?: boolean }) => void;
+  consumeCameraTargetSwitchMode: () => void;
   setReferenceFrame: (frame: ReferenceFrame) => void;
   setShowStars: (show: boolean) => void;
   setShowObjectAxes: (show: boolean) => void;
@@ -59,6 +62,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   playbackSpeed: 60,
   isPlaying: false,
   cameraTarget: 'overview',
+  cameraTargetSwitchMode: 'preset',
   referenceFrame: 'GCRS',
   showStars: true,
   showObjectAxes: true,
@@ -85,7 +89,12 @@ export const useMissionStore = create<MissionState>((set) => ({
     })),
   setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
-  setCameraTarget: (cameraTarget) => set({ cameraTarget }),
+  setCameraTarget: (cameraTarget, options) =>
+    set({
+      cameraTarget,
+      cameraTargetSwitchMode: options?.preserveView ? 'preserve-view' : 'preset',
+    }),
+  consumeCameraTargetSwitchMode: () => set({ cameraTargetSwitchMode: 'preset' }),
   setReferenceFrame: (referenceFrame) => set({ referenceFrame }),
   setShowStars: (showStars) => set({ showStars }),
   setShowObjectAxes: (showObjectAxes) => set({ showObjectAxes }),

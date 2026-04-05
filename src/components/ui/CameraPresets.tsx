@@ -18,8 +18,8 @@ export default function CameraPresets() {
         <button
           key={id}
           className={`${styles.btn} ${cameraTarget === id ? styles.active : ''}`}
-          onClick={() => setCameraTarget(id)}
-          title={label}
+          onClick={(event) => setCameraTarget(id, { preserveView: event.shiftKey })}
+          title={`${label}${cameraTarget === id ? '' : ' (Shift+click: keep current view)'}`}
         >
           <span className={styles.icon}>{icon}</span>
           <span className={styles.label}>{label}</span>
