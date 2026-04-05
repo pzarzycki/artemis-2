@@ -3,7 +3,7 @@
 ![GitHub Pages](https://github.com/pzarzycki/artemis-2/actions/workflows/deploy-pages.yml/badge.svg)
 ![React](https://img.shields.io/badge/React-19-1d2330?logo=react)
 ![Three.js](https://img.shields.io/badge/Three.js-WebGL-1d2330?logo=three.js)
-![Scientific Frame Spec](https://img.shields.io/badge/Frames-GCRS%20%7C%20BCRS%20%7C%20ICRS-1d2330)
+![Frame Reference Spec](https://img.shields.io/badge/Frames-GCRS%20%7C%20BCRS%20%7C%20ICRS-1d2330)
 
 Real-time 3D mission tracker for NASA's Artemis II lunar flyby, built with React + Three.js using GCRS/BCRS/ICRS reference frames, ephemeris data from JPL Horizons and SPICE DE440, and a registered celestial sky map.
 
@@ -19,7 +19,7 @@ Real-time 3D mission tracker for NASA's Artemis II lunar flyby, built with React
 <details>
 <summary>About this README</summary>
 
-This README defines the scientific frames, time conventions, data products, and texture-registration assumptions used by the viewer.
+This README defines the coordinate frames, time conventions, data products, and texture-registration assumptions used by the viewer.
 
 </details>
 
@@ -27,7 +27,7 @@ This README defines the scientific frames, time conventions, data products, and 
 
 The application renders Earth, Moon, Sun, the Artemis II spacecraft, mission trajectory, a celestial background map, and orientation helpers.
 
-The scientific contract covers:
+The technical contract covers:
 
 - frame origin and handedness
 - inertial and body-fixed orientation
@@ -106,7 +106,7 @@ Camera convention:
 
 Presentation rule:
 
-- the selected scientific Cartesian frame is mapped directly into the render world without handedness flips or hidden axis swaps
+- the selected Cartesian frame is mapped directly into the render world without handedness flips or hidden axis swaps
 - any helper indicator shown in the app must respect that same right-handed `Z-up` convention
 - camera position and world-space camera orientation vectors are reported in the selected scene frame
 - the camera panel reports orientation primarily as `RA/Dec` angles of the corresponding world-space direction vectors
@@ -142,7 +142,7 @@ The default scene is an Earth-centered inertial Cartesian frame aligned with pra
 - handedness: right-handed
 - units: kilometers
 
-In the renderer, this scientific frame is mapped directly into the Three.js world without handedness flips or hidden axis swaps. The app UI label `GCRS` should be read in this practical sense: Earth-centered, inertial, and `J2000/ICRF`-aligned for ephemeris work.
+In the renderer, this frame is mapped directly into the Three.js world without handedness flips or hidden axis swaps. The app UI label `GCRS` is used in this practical sense: Earth-centered, inertial, and `J2000/ICRF`-aligned for ephemeris work.
 
 Earth stays at `(0, 0, 0)` in this mode. Earth rotation is applied separately through the Earth body-fixed frame:
 
@@ -171,7 +171,7 @@ The Sun state used by the default scene is:
 Source:
 
 - SPICE `DE440`
-- queried in the pipeline with target `Sun`, observer `Earth center`, frame `"J2000"`
+- Sun relative to Earth center in the practical `J2000/ICRF`-aligned inertial frame
 
 The same Sun vector drives:
 
@@ -181,7 +181,7 @@ The same Sun vector drives:
 
 ### 2.1 Celestial Background
 
-The night-sky background must use a celestial map whose coordinates are aligned with the same inertial axes as the rest of the scene.
+The night-sky background uses a celestial map aligned with the same inertial axes as the rest of the scene.
 
 Source:
 
@@ -218,10 +218,9 @@ Source:
 
 Moon position is **not** fetched from Horizons.
 
-External verification:
+Validation:
 
-- the generated Moon state was checked against official JPL Horizons Moon vectors using the same Earth-centered `J2000` / `ICRF`-aligned setup
-- agreement was about `0.002 km` at the verified epoch
+- Moon state vectors were cross-checked against JPL Horizons with agreement of about `0.002 km` at the checked epoch
 
 ### 3.2 Moon orientation
 
@@ -241,7 +240,7 @@ In the renderer, the Moon body frame is separated from the sphere-mesh correctio
 
 ### 3.3 Moon texture registration
 
-The Moon texture is part of the Moon-fixed frame definition. It is assumed to be:
+The Moon texture is treated as:
 
 - equirectangular longitude-latitude map
 - north at top
@@ -265,33 +264,17 @@ Source:
 
 The documented target is `COMMAND = -1024`, which is the Horizons / NAIF identifier for Artemis II. Horizons also resolves `Artemis II`, and may accept mission aliases such as `Integrity` and `EM-2`.
 
-**Trajectory coverage:** data starts after ICPS separation, about `3h 24m 39s` after launch (`2026-Apr-1 @ 22:35:12 UTC`), i.e. from approximately `2026-Apr-2 @ 01:59:51 UTC`. No trajectory data is available prior to ICPS separation.
+**Trajectory coverage:** data starts after ICPS separation, about `3h 24m 39s` after launch (`2026-Apr-1 @ 22:35:12 UTC`), i.e. from approximately `2026-Apr-2 @ 01:59:51 UTC`.
 
-The Horizons configuration used for this project is geocentric:
-
-- `COMMAND = -1024`
-- `EPHEM_TYPE = VECTORS`
-- `CENTER = 500@399`
-- `REF_SYSTEM = J2000`
-- `REF_PLANE = FRAME`
-- `OUT_UNITS = KM-S`
-
-That yields a geocentric inertial spacecraft state in the same `J2000/ICRF`-aligned frame used elsewhere in the app.
-
-Mission-validity condition for this dataset:
-
-- NASA describes Artemis II closest approach as about `4,000 to 6,000 miles` above the Moon’s surface
-- that is about `6,437 to 9,656 km` above the lunar surface
-- the authoritative trajectory plus corrected SPICE Moon ephemeris yields a closest approach of about `6,583.9 km` above the lunar surface
-- a trajectory file that never reaches that band is not acceptable as an Artemis II trajectory for this app
+Horizons vectors are used as geocentric inertial spacecraft states in the same practical `J2000/ICRF`-aligned frame used elsewhere in the app.
 
 ### 4.1 Spacecraft orientation
 
-The app does not use an authoritative spacecraft attitude product. The rendered spacecraft orientation is therefore synthetic:
+The app does not include an authoritative spacecraft attitude product. Spacecraft orientation is shown as a visual flight cue:
 
 - point the model approximately along the velocity vector
 
-That is acceptable for visualization, but it must not be described as true Orion attitude.
+This orientation is illustrative and not the official Orion attitude history.
 
 ## 5. BCRS Mode
 
@@ -300,26 +283,10 @@ That is acceptable for visualization, but it must not be described as true Orion
 - origin at the Solar System barycenter
 - axes aligned with the `ICRS`
 
-For a true barycentric mode, the project needs:
-
-- `Earth_BCRS(t)` = Earth center relative to Solar System barycenter
-- `Moon_BCRS(t)` = Moon center relative to Solar System barycenter
-- `Sun_BCRS(t)` = Sun center relative to Solar System barycenter, or a barycentric Sun state directly from the ephemeris
-- `SC_BCRS(t)` = spacecraft relative to Solar System barycenter
-
-All of these must be evaluated at the same epoch in the same time convention.
-
-In this implementation, barycentric positions are constructed from the geocentric states using:
+In `BCRS` mode, Earth uses its barycentric position from ephemeris data, and Moon/spacecraft positions are shifted from geocentric vectors by Earth's barycentric offset:
 
 - `Moon_BCRS(t) = Earth_BCRS(t) + Moon_geocentric(t)`
 - `SC_BCRS(t) = Earth_BCRS(t) + SC_geocentric(t)`
-
-In a true barycentric scene:
-
-- Earth is no longer at the origin
-- Moon is no longer geocentric by construction
-- spacecraft is no longer geocentric by construction
-- the Sun is no longer just a geocentric direction vector
 
 Body rotation models do not change in barycentric mode. Earth texture still means Earth-fixed longitude, and Moon texture still means Moon-fixed longitude.
 
@@ -370,11 +337,11 @@ Assumptions:
 - prime meridian at the horizontal center of the map
 - map center aligned to body `+X`
 
-The renderer applies the body-frame rotation separately from the sphere-mesh correction that maps cartographic north from Three.js local `+Y` to body `+Z`. Source metadata has not yet fully confirmed Greenwich centering for the current Earth texture set.
+The renderer applies the body-frame rotation separately from the sphere-mesh correction that maps cartographic north from Three.js local `+Y` to body `+Z`.
 
 ### Moon
 
-The Moon texture stack is assumed to be:
+Moon texture assumptions:
 
 - equirectangular
 - north-up
@@ -391,9 +358,9 @@ The application uses the following local-axis conventions:
 |---|---|---|---|---|---|
 | Earth | Earth body-fixed (`IAU_EARTH` / ECEF-like) | Greenwich meridian on equator | `90°E` on equator | terrestrial north pole | Standard terrestrial convention; directly compatible with longitude mapping and Earth rotation |
 | Moon | Lunar body-fixed (`IAU_MOON`) | lunar prime meridian on equator | `90°E` lunar longitude | lunar north pole | Standard IAU/NAIF/SPICE cartographic frame |
-| Spacecraft | Synthetic flight frame unless true attitude is available | prograde (`v`) | `z × x` | orbit normal (`r × v`) | Gives all three axes a physical meaning without claiming true Orion attitude |
+| Spacecraft | Visual flight frame (not mission attitude) | prograde (`v`) | `z × x` | orbit normal (`r × v`) | Keeps orientation cues physically interpretable for visualization |
 
-For Earth, local `+Z` stays aligned with inertial world `+Z`, while local `+X/+Y` rotate with Earth rotation. For spacecraft, trajectory alone does **not** define true attitude; the local frame is explicitly synthetic until an authoritative attitude source exists.
+For Earth, local `+Z` stays aligned with inertial world `+Z`, while local `+X/+Y` rotate with Earth rotation.
 
 ## Data Products
 
@@ -418,6 +385,5 @@ For Earth, local `+Z` stays aligned with inertial world `+Z`, while local `+X/+Y
 
 ## Known Limits
 
-- The `BCRS` selector is translation-based rather than a full barycentric recomputation of every body state.
+- `BCRS` mode applies Earth's barycentric translation and keeps Moon/spacecraft offsets from geocentric states.
 - Earth geographic outputs are spherical, not geodetic.
-- Earth texture zero-meridian registration is assumed from source textures rather than proven from source metadata.
