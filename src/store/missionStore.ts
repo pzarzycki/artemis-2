@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { getDefaultMissionJD } from '../lib/time';
 import type { Vec3 } from '../lib/coordinates/types';
-import type { StarMapResolution } from '../config/starmaps';
+import type { StarMapLayer, StarMapResolution } from '../config/starmaps';
 
 export type CameraTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
 export type CameraTargetSwitchMode = 'preset' | 'preserve-view';
@@ -22,6 +22,7 @@ interface MissionState {
   showObjectAxes: boolean;
   showTrajectory: boolean;
   skyExposure: number;
+  starMapLayer: StarMapLayer;
   starMapResolution: StarMapResolution;
   isStarMapLoading: boolean;
   bloomIntensity: number;
@@ -45,6 +46,7 @@ interface MissionState {
   setShowObjectAxes: (show: boolean) => void;
   setShowTrajectory: (show: boolean) => void;
   setSkyExposure: (value: number) => void;
+  setStarMapLayer: (value: StarMapLayer) => void;
   setStarMapResolution: (value: StarMapResolution) => void;
   setStarMapLoading: (value: boolean) => void;
   setBloomIntensity: (value: number) => void;
@@ -68,6 +70,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   showObjectAxes: true,
   showTrajectory: true,
   skyExposure: 0.5,
+  starMapLayer: 'starmap',
   starMapResolution: '4k',
   isStarMapLoading: false,
   bloomIntensity: 0.6,
@@ -100,6 +103,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   setShowObjectAxes: (showObjectAxes) => set({ showObjectAxes }),
   setShowTrajectory: (showTrajectory) => set({ showTrajectory }),
   setSkyExposure: (skyExposure) => set({ skyExposure }),
+  setStarMapLayer: (starMapLayer) => set({ starMapLayer }),
   setStarMapResolution: (starMapResolution) => set({ starMapResolution }),
   setStarMapLoading: (isStarMapLoading) => set({ isStarMapLoading }),
   setBloomIntensity: (bloomIntensity) => set({ bloomIntensity }),

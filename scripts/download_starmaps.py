@@ -13,6 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 STARMAPS_DIR = REPO_ROOT / "public" / "starmaps"
 BASE_URL = "https://svs.gsfc.nasa.gov/vis/a000000/a004800/a004851"
 SUPPORTED_RESOLUTIONS = ("4k", "8k", "16k")
+SUPPORTED_LAYERS = ("starmap", "hiptyc", "milkyway")
 MANIFEST_PATH = STARMAPS_DIR / "manifest.json"
 
 
@@ -26,6 +27,13 @@ def parse_args() -> argparse.Namespace:
         choices=SUPPORTED_RESOLUTIONS,
         default=list(SUPPORTED_RESOLUTIONS),
         help="Resolutions to download. Defaults to all supported resolutions.",
+    )
+    parser.add_argument(
+        "--layers",
+        nargs="+",
+        choices=SUPPORTED_LAYERS,
+        default=list(SUPPORTED_LAYERS),
+        help="Celestial sky layers to download. Defaults to all supported layers.",
     )
     return parser.parse_args()
 
@@ -71,15 +79,19 @@ def download(url: str, destination: Path) -> None:
 def main() -> int:
     args = parse_args()
 
-    for resolution in args.resolutions:
-        filename = f"starmap_2020_{resolution}.exr"
-        download(f"{BASE_URL}/{filename}", STARMAPS_DIR / filename)
+    for layer in args.layers:
+        for resolution in args.resolutions:
+            filename = f"{layer}_2020_{resolution}.exr"
+            download(f"{BASE_URL}/{filename}", STARMAPS_DIR / filename)
 
-    available = [
-        resolution
-        for resolution in SUPPORTED_RESOLUTIONS
-        if (STARMAPS_DIR / f"starmap_2020_{resolution}.exr").exists()
-    ]
+    available = {
+        layer: [
+            resolution
+            for resolution in SUPPORTED_RESOLUTIONS
+            if (STARMAPS_DIR / f"{layer}_2020_{resolution}.exr").exists()
+        ]
+        for layer in SUPPORTED_LAYERS
+    }
     MANIFEST_PATH.write_text(
         json.dumps({"available": available}, indent=2) + "\n",
         encoding="utf-8",

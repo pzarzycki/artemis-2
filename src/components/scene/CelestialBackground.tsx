@@ -3,35 +3,36 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js';
 import { useMissionStore } from '../../store/missionStore';
-import { getStarMapPath, type StarMapResolution } from '../../config/starmaps';
+import { getStarMapPath, type StarMapLayer, type StarMapResolution } from '../../config/starmaps';
 
 const SKY_RADIUS_KM = 800_000_000;
 const loader = new EXRLoader();
-const textureCache = new Map<StarMapResolution, THREE.DataTexture>();
-const pendingTextureLoads = new Map<StarMapResolution, Promise<THREE.DataTexture>>();
+const textureCache = new Map<string, THREE.DataTexture>();
+const pendingTextureLoads = new Map<string, Promise<THREE.DataTexture>>();
 
-async function loadStarMapTexture(resolution: StarMapResolution) {
-  const cached = textureCache.get(resolution);
+function getTextureCacheKey(layer: StarMapLayer, resolution: StarMapResolution) {
+  return `${layer}:${resolution}`;
+}
+
+async function loadStarMapTexture(layer: StarMapLayer, resolution: StarMapResolution) {
+  const cacheKey = getTextureCacheKey(layer, resolution);
+  const cached = textureCache.get(cacheKey);
   if (cached) return cached;
 
-  const pending = pendingTextureLoads.get(resolution);
+  const pending = pendingTextureLoads.get(cacheKey);
   if (pending) return pending;
 
-  const promise = loader.loadAsync(getStarMapPath(resolution)).then((loaded) => {
+  const promise = loader.loadAsync(getStarMapPath(layer, resolution)).then((loaded) => {
     loaded.wrapS = THREE.RepeatWrapping;
     loaded.wrapT = THREE.ClampToEdgeWrapping;
-    loaded.repeat.x = -1;
-    loaded.repeat.y = 1;
-    loaded.offset.x = 1;
-    loaded.offset.y = 0;
     loaded.colorSpace = THREE.LinearSRGBColorSpace;
     loaded.needsUpdate = true;
-    textureCache.set(resolution, loaded);
-    pendingTextureLoads.delete(resolution);
+    textureCache.set(cacheKey, loaded);
+    pendingTextureLoads.delete(cacheKey);
     return loaded;
   });
 
-  pendingTextureLoads.set(resolution, promise);
+  pendingTextureLoads.set(cacheKey, promise);
   return promise;
 }
 
@@ -39,6 +40,7 @@ export default function CelestialBackground() {
   const meshRef = useRef<THREE.Mesh>(null);
   const camera = useThree((state) => state.camera);
   const skyExposure = useMissionStore((state) => state.skyExposure);
+  const starMapLayer = useMissionStore((state) => state.starMapLayer);
   const starMapResolution = useMissionStore((state) => state.starMapResolution);
   const setStarMapLoading = useMissionStore((state) => state.setStarMapLoading);
   const [texture, setTexture] = useState<THREE.DataTexture | null>(null);
@@ -47,7 +49,7 @@ export default function CelestialBackground() {
     let isActive = true;
     setStarMapLoading(true);
 
-    loadStarMapTexture(starMapResolution)
+    loadStarMapTexture(starMapLayer, starMapResolution)
       .then((loaded) => {
         if (!isActive) return;
         setTexture((previous) => {
@@ -57,7 +59,7 @@ export default function CelestialBackground() {
         setStarMapLoading(false);
       })
       .catch((error) => {
-        console.warn(`[Sky] Failed to load ${getStarMapPath(starMapResolution)}`, error);
+        console.warn(`[Sky] Failed to load ${getStarMapPath(starMapLayer, starMapResolution)}`, error);
         if (isActive) {
           setStarMapLoading(false);
         }
@@ -67,7 +69,7 @@ export default function CelestialBackground() {
       isActive = false;
       setStarMapLoading(false);
     };
-  }, [setStarMapLoading, starMapResolution]);
+  }, [setStarMapLoading, starMapLayer, starMapResolution]);
 
   const material = useMemo(() => {
     if (!texture) return null;
@@ -77,20 +79,26 @@ export default function CelestialBackground() {
         exposure: { value: skyExposure },
       },
       vertexShader: `
-        varying vec2 vUv;
+        varying vec3 vWorldDir;
 
         void main() {
-          vUv = uv;
+          vWorldDir = normalize(mat3(modelMatrix) * position);
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
         uniform sampler2D skyMap;
         uniform float exposure;
-        varying vec2 vUv;
+        varying vec3 vWorldDir;
+
+        const float PI = 3.1415926535897932384626433832795;
 
         void main() {
-          vec3 hdr = texture2D(skyMap, vUv).rgb * exposure;
+          float ra = atan(vWorldDir.y, vWorldDir.x);
+          float u = fract(0.5 - ra / (2.0 * PI));
+          float v = 0.5 + asin(clamp(vWorldDir.z, -1.0, 1.0)) / PI;
+          vec2 skyUv = vec2(u, v);
+          vec3 hdr = texture2D(skyMap, skyUv).rgb * exposure;
           vec3 mapped = hdr / (vec3(1.0) + hdr);
           gl_FragColor = vec4(mapped, 1.0);
         }
@@ -117,7 +125,6 @@ export default function CelestialBackground() {
   return (
     <mesh
       ref={meshRef}
-      rotation={[Math.PI / 2, 0, 0]}
       renderOrder={-1000}
       frustumCulled={false}
     >

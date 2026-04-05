@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMissionStore } from '../../store/missionStore';
 import { assetUrl } from '../../config/assets';
-import { STAR_MAP_OPTIONS, type StarMapResolution } from '../../config/starmaps';
+import {
+  STAR_MAP_LAYER_LABELS,
+  STAR_MAP_LAYER_OPTIONS,
+  STAR_MAP_OPTIONS,
+  type StarMapLayer,
+  type StarMapResolution,
+} from '../../config/starmaps';
 import styles from './SettingsDialog.module.css';
 
 interface SliderRowProps {
@@ -77,13 +83,48 @@ function ResolutionRow({ label, description, value, onChange, isLoading, options
   );
 }
 
+interface LayerRowProps {
+  label: string;
+  description: string;
+  value: StarMapLayer;
+  onChange: (value: StarMapLayer) => void;
+}
+
+function LayerRow({ label, description, value, onChange }: LayerRowProps) {
+  return (
+    <label className={styles.row}>
+      <div className={styles.rowHeader}>
+        <span className={styles.rowLabel}>{label}</span>
+        <span className={`${styles.rowValue} mono`}>{STAR_MAP_LAYER_LABELS[value]}</span>
+      </div>
+      <div className={styles.rowDescription}>{description}</div>
+      <div className={styles.segmentedControl} role="radiogroup" aria-label="Star map layer">
+        {STAR_MAP_LAYER_OPTIONS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={value === option}
+            className={value === option ? `${styles.segment} ${styles.segmentActive}` : styles.segment}
+            onClick={() => onChange(option)}
+          >
+            {STAR_MAP_LAYER_LABELS[option]}
+          </button>
+        ))}
+      </div>
+    </label>
+  );
+}
+
 export default function SettingsDialog({ onClose }: SettingsDialogProps) {
   const skyExposure = useMissionStore((s) => s.skyExposure);
+  const starMapLayer = useMissionStore((s) => s.starMapLayer);
   const starMapResolution = useMissionStore((s) => s.starMapResolution);
   const isStarMapLoading = useMissionStore((s) => s.isStarMapLoading);
   const bloomIntensity = useMissionStore((s) => s.bloomIntensity);
   const ambientLightIntensity = useMissionStore((s) => s.ambientLightIntensity);
   const setSkyExposure = useMissionStore((s) => s.setSkyExposure);
+  const setStarMapLayer = useMissionStore((s) => s.setStarMapLayer);
   const setStarMapResolution = useMissionStore((s) => s.setStarMapResolution);
   const setBloomIntensity = useMissionStore((s) => s.setBloomIntensity);
   const setAmbientLightIntensity = useMissionStore((s) => s.setAmbientLightIntensity);
@@ -94,9 +135,12 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
 
     fetch(assetUrl('starmaps/manifest.json'))
       .then((response) => response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`)))
-      .then((payload: { available?: string[] }) => {
+      .then((payload: { available?: Partial<Record<StarMapLayer, string[]>> | string[] }) => {
         if (cancelled) return;
-        const available = STAR_MAP_OPTIONS.filter((option) => payload.available?.includes(option));
+        const availableForLayer = Array.isArray(payload.available)
+          ? payload.available
+          : payload.available?.[starMapLayer] ?? [];
+        const available = STAR_MAP_OPTIONS.filter((option) => availableForLayer.includes(option));
         setAvailableResolutions(available.length > 0 ? available : [starMapResolution]);
       })
       .catch(() => {
@@ -107,7 +151,7 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
     return () => {
       cancelled = true;
     };
-  }, [starMapResolution]);
+  }, [starMapLayer, starMapResolution]);
 
   const visibleResolutions = useMemo(() => {
     const deduped = new Set<StarMapResolution>(availableResolutions);
@@ -164,6 +208,12 @@ export default function SettingsDialog({ onClose }: SettingsDialogProps) {
               max={0.2}
               step={0.005}
               onChange={setAmbientLightIntensity}
+            />
+            <LayerRow
+              label="Star Map Layer"
+              description="Chooses which celestial NASA sky layer to render for the background."
+              value={starMapLayer}
+              onChange={setStarMapLayer}
             />
             <ResolutionRow
               label="Star Map Resolution"
