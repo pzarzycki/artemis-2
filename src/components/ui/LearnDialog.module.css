@@ -77,12 +77,32 @@
 }
 
 .tabs {
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 16px 14px 16px 16px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(113, 177, 224, 0.42) rgba(255, 255, 255, 0.03);
   border-right: 1px solid rgba(182, 225, 255, 0.1);
   background: linear-gradient(180deg, rgba(9, 14, 24, 0.96), rgba(6, 10, 18, 0.94));
+}
+
+.tabs::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tabs::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+}
+
+.tabs::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(113, 177, 224, 0.52), rgba(0, 212, 170, 0.38));
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .tab {

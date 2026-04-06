@@ -11,6 +11,7 @@ import Trajectory from './Trajectory';
 import CameraRig from './CameraRig';
 import WorldHud from './WorldHud';
 import CelestialBackground from './CelestialBackground';
+import GravityField from './GravityField';
 import { useMissionStore } from '../../store/missionStore';
 import { useSceneModel } from '../../hooks/useSceneModel';
 
@@ -50,12 +51,14 @@ function CameraTelemetry() {
 }
 
 export default function Scene() {
-  const cameraTarget = useMissionStore((s) => s.cameraTarget);
-  const cameraTargetSwitchMode = useMissionStore((s) => s.cameraTargetSwitchMode);
-  const consumeCameraTargetSwitchMode = useMissionStore((s) => s.consumeCameraTargetSwitchMode);
+  const anchorTarget = useMissionStore((s) => s.anchorTarget);
+  const anchorTargetSwitchMode = useMissionStore((s) => s.anchorTargetSwitchMode);
+  const lookTarget = useMissionStore((s) => s.lookTarget);
+  const consumeAnchorTargetSwitchMode = useMissionStore((s) => s.consumeAnchorTargetSwitchMode);
   const showStars = useMissionStore((s) => s.showStars);
   const showObjectAxes = useMissionStore((s) => s.showObjectAxes);
   const showTrajectory = useMissionStore((s) => s.showTrajectory);
+  const showGravityField = useMissionStore((s) => s.showGravityField);
   const ambientLightIntensity = useMissionStore((s) => s.ambientLightIntensity);
   const bloomIntensity = useMissionStore((s) => s.bloomIntensity);
   const scene = useSceneModel();
@@ -98,15 +101,24 @@ export default function Scene() {
             worldOffset={scene.earthWorld}
           />
         )}
+        {showGravityField && (
+          <GravityField
+            earthPos={scene.earthWorld}
+            moonPos={scene.moonWorld}
+            spacecraftPos={scene.spacecraftWorld}
+          />
+        )}
 
         <CameraRig
-          target={cameraTarget}
-          targetSwitchMode={cameraTargetSwitchMode}
+          anchorTarget={anchorTarget}
+          anchorTargetSwitchMode={anchorTargetSwitchMode}
+          lookTarget={lookTarget}
           referenceFrame={scene.referenceFrame}
+          sunWorld={scene.sunWorld}
           earthWorld={scene.earthWorld}
           moonWorld={scene.moonWorld}
           spacecraftWorld={scene.spacecraftWorld}
-          consumeTargetSwitchMode={consumeCameraTargetSwitchMode}
+          consumeAnchorTargetSwitchMode={consumeAnchorTargetSwitchMode}
         />
         <WorldHud />
       </Suspense>

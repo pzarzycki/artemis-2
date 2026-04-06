@@ -3,11 +3,12 @@ import { getDefaultMissionJD } from '../lib/time';
 import type { Vec3 } from '../lib/coordinates/types';
 import type { StarMapLayer, StarMapResolution } from '../config/starmaps';
 
-export type CameraTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
-export type CameraTargetSwitchMode = 'preset' | 'preserve-view';
+export type AnchorTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
+export type AnchorTargetSwitchMode = 'preset' | 'preserve-view';
+export type LookTarget = 'none' | 'sun' | 'earth' | 'moon' | 'spacecraft';
 export type MissionMode = 'live' | 'scrub';
 export type ReferenceFrame = 'GCRS' | 'BCRS';
-export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'camera' | 'planning';
+export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'gravity' | 'camera' | 'planning';
 export type ActiveDialog = 'learn' | 'settings' | null;
 
 interface MissionState {
@@ -15,12 +16,14 @@ interface MissionState {
   mode: MissionMode;
   playbackSpeed: number;
   isPlaying: boolean;
-  cameraTarget: CameraTarget;
-  cameraTargetSwitchMode: CameraTargetSwitchMode;
+  anchorTarget: AnchorTarget;
+  anchorTargetSwitchMode: AnchorTargetSwitchMode;
+  lookTarget: LookTarget;
   referenceFrame: ReferenceFrame;
   showStars: boolean;
   showObjectAxes: boolean;
   showTrajectory: boolean;
+  showGravityField: boolean;
   skyExposure: number;
   starMapLayer: StarMapLayer;
   starMapResolution: StarMapResolution;
@@ -39,12 +42,15 @@ interface MissionState {
   setMode: (mode: MissionMode) => void;
   setPlaybackSpeed: (speed: number) => void;
   setIsPlaying: (playing: boolean) => void;
-  setCameraTarget: (target: CameraTarget, options?: { preserveView?: boolean }) => void;
-  consumeCameraTargetSwitchMode: () => void;
+  setAnchorTarget: (target: AnchorTarget, options?: { preserveView?: boolean }) => void;
+  setLookTarget: (target: LookTarget) => void;
+  clearLookTarget: () => void;
+  consumeAnchorTargetSwitchMode: () => void;
   setReferenceFrame: (frame: ReferenceFrame) => void;
   setShowStars: (show: boolean) => void;
   setShowObjectAxes: (show: boolean) => void;
   setShowTrajectory: (show: boolean) => void;
+  setShowGravityField: (show: boolean) => void;
   setSkyExposure: (value: number) => void;
   setStarMapLayer: (value: StarMapLayer) => void;
   setStarMapResolution: (value: StarMapResolution) => void;
@@ -63,12 +69,14 @@ export const useMissionStore = create<MissionState>((set) => ({
   mode: 'live',
   playbackSpeed: 60,
   isPlaying: false,
-  cameraTarget: 'overview',
-  cameraTargetSwitchMode: 'preset',
+  anchorTarget: 'overview',
+  anchorTargetSwitchMode: 'preset',
+  lookTarget: 'none',
   referenceFrame: 'GCRS',
   showStars: true,
   showObjectAxes: true,
   showTrajectory: true,
+  showGravityField: false,
   skyExposure: 0.5,
   starMapLayer: 'starmap',
   starMapResolution: '4k',
@@ -92,16 +100,19 @@ export const useMissionStore = create<MissionState>((set) => ({
     })),
   setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
-  setCameraTarget: (cameraTarget, options) =>
+  setAnchorTarget: (anchorTarget, options) =>
     set({
-      cameraTarget,
-      cameraTargetSwitchMode: options?.preserveView ? 'preserve-view' : 'preset',
+      anchorTarget,
+      anchorTargetSwitchMode: options?.preserveView ? 'preserve-view' : 'preset',
     }),
-  consumeCameraTargetSwitchMode: () => set({ cameraTargetSwitchMode: 'preset' }),
+  setLookTarget: (lookTarget) => set({ lookTarget }),
+  clearLookTarget: () => set({ lookTarget: 'none' }),
+  consumeAnchorTargetSwitchMode: () => set({ anchorTargetSwitchMode: 'preset' }),
   setReferenceFrame: (referenceFrame) => set({ referenceFrame }),
   setShowStars: (showStars) => set({ showStars }),
   setShowObjectAxes: (showObjectAxes) => set({ showObjectAxes }),
   setShowTrajectory: (showTrajectory) => set({ showTrajectory }),
+  setShowGravityField: (showGravityField) => set({ showGravityField }),
   setSkyExposure: (skyExposure) => set({ skyExposure }),
   setStarMapLayer: (starMapLayer) => set({ starMapLayer }),
   setStarMapResolution: (starMapResolution) => set({ starMapResolution }),
@@ -112,6 +123,7 @@ export const useMissionStore = create<MissionState>((set) => ({
     set({ cameraPosition, cameraForward, cameraUp }),
   requestCameraAim: (cameraAimDirection) =>
     set((state) => ({
+      lookTarget: 'none',
       cameraAimDirection,
       cameraAimRequestId: state.cameraAimRequestId + 1,
     })),

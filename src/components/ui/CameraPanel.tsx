@@ -1,6 +1,15 @@
 import { useMissionStore } from '../../store/missionStore';
 import { useMemo, useState, type ReactNode } from 'react';
+import type { LookTarget } from '../../store/missionStore';
 import styles from './CameraPanel.module.css';
+
+const LOOK_TARGET_OPTIONS: { id: LookTarget; label: string }[] = [
+  { id: 'none', label: 'None' },
+  { id: 'sun', label: 'Sun' },
+  { id: 'earth', label: 'Earth' },
+  { id: 'moon', label: 'Moon' },
+  { id: 'spacecraft', label: 'Spacecraft' },
+];
 
 function formatVec3(v: [number, number, number], digits: number) {
   return `${v[0].toFixed(digits)}  ${v[1].toFixed(digits)}  ${v[2].toFixed(digits)}`;
@@ -118,6 +127,8 @@ export default function CameraPanel() {
   const cameraPosition = useMissionStore((s) => s.cameraPosition);
   const cameraForward = useMissionStore((s) => s.cameraForward);
   const cameraUp = useMissionStore((s) => s.cameraUp);
+  const lookTarget = useMissionStore((s) => s.lookTarget);
+  const setLookTarget = useMissionStore((s) => s.setLookTarget);
   const requestCameraAim = useMissionStore((s) => s.requestCameraAim);
   const openDialog = useMissionStore((s) => s.openDialog);
   const [raInput, setRaInput] = useState('0');
@@ -254,6 +265,37 @@ export default function CameraPanel() {
               <span className={styles.hint}>Invalid direction. Use RA in degrees and Dec within [-90°, +90°].</span>
             </div>
           )}
+        </div>
+
+        <div className={styles.section}>
+          <div className={styles.headingRow}>
+            <Tooltip
+              text={`Keep the camera pointed at a scene object.\nManual pointing returns this to None.`}
+            >
+              <div className={styles.label}>Auto Point</div>
+            </Tooltip>
+          </div>
+          <Tooltip
+            text={`Continuous look target.\nSelect Sun, Earth, Moon, or Spacecraft to keep the camera pointed there.`}
+          >
+            <div className={styles.selectWrap}>
+              <select
+                className={styles.select}
+                value={lookTarget}
+                onChange={(event) => setLookTarget(event.target.value as LookTarget)}
+                aria-label="Automatic camera point target"
+              >
+                {LOOK_TARGET_OPTIONS.map(({ id, label }) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <span className={styles.selectChevron} aria-hidden="true">
+                ▾
+              </span>
+            </div>
+          </Tooltip>
         </div>
       </div>
   );
