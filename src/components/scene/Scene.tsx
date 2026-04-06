@@ -11,6 +11,7 @@ import Trajectory from './Trajectory';
 import CameraRig from './CameraRig';
 import WorldHud from './WorldHud';
 import CelestialBackground from './CelestialBackground';
+import GravityField from './GravityField';
 import { useMissionStore } from '../../store/missionStore';
 import { useSceneModel } from '../../hooks/useSceneModel';
 
@@ -56,6 +57,7 @@ export default function Scene() {
   const showStars = useMissionStore((s) => s.showStars);
   const showObjectAxes = useMissionStore((s) => s.showObjectAxes);
   const showTrajectory = useMissionStore((s) => s.showTrajectory);
+  const showGravityField = useMissionStore((s) => s.showGravityField);
   const ambientLightIntensity = useMissionStore((s) => s.ambientLightIntensity);
   const bloomIntensity = useMissionStore((s) => s.bloomIntensity);
   const scene = useSceneModel();
@@ -96,6 +98,12 @@ export default function Scene() {
             trajectory={scene.trajectory}
             currentJD={scene.julianDate}
             worldOffset={scene.earthWorld}
+          />
+        )}
+        {showGravityField && (
+          <GravityField
+            earthPos={scene.earthWorld}
+            moonPos={scene.moonWorld}
           />
         )}
 

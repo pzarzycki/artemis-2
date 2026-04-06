@@ -21,6 +21,7 @@ interface MissionState {
   showStars: boolean;
   showObjectAxes: boolean;
   showTrajectory: boolean;
+  showGravityField: boolean;
   skyExposure: number;
   starMapLayer: StarMapLayer;
   starMapResolution: StarMapResolution;
@@ -45,6 +46,7 @@ interface MissionState {
   setShowStars: (show: boolean) => void;
   setShowObjectAxes: (show: boolean) => void;
   setShowTrajectory: (show: boolean) => void;
+  setShowGravityField: (show: boolean) => void;
   setSkyExposure: (value: number) => void;
   setStarMapLayer: (value: StarMapLayer) => void;
   setStarMapResolution: (value: StarMapResolution) => void;
@@ -69,6 +71,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   showStars: true,
   showObjectAxes: true,
   showTrajectory: true,
+  showGravityField: false,
   skyExposure: 0.5,
   starMapLayer: 'starmap',
   starMapResolution: '4k',
@@ -102,6 +105,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   setShowStars: (showStars) => set({ showStars }),
   setShowObjectAxes: (showObjectAxes) => set({ showObjectAxes }),
   setShowTrajectory: (showTrajectory) => set({ showTrajectory }),
+  setShowGravityField: (showGravityField) => set({ showGravityField }),
   setSkyExposure: (skyExposure) => set({ skyExposure }),
   setStarMapLayer: (starMapLayer) => set({ starMapLayer }),
   setStarMapResolution: (starMapResolution) => set({ starMapResolution }),
