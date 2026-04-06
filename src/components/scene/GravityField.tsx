@@ -99,7 +99,10 @@ export default function GravityField({ earthPos, moonPos }: GravityFieldProps) {
     [],
   );
 
-  // Shader material created once; uniforms are updated imperatively in useFrame
+  // Shader material created once; uniforms are updated imperatively in useFrame.
+  // earthPos/moonPos are intentionally omitted from deps: they change every frame
+  // and are synced via useFrame, so recreating the material on each change would
+  // be wasteful and cause GPU resource churn.
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
