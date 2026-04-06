@@ -3,9 +3,9 @@ import { getDefaultMissionJD } from '../lib/time';
 import type { Vec3 } from '../lib/coordinates/types';
 import type { StarMapLayer, StarMapResolution } from '../config/starmaps';
 
-export type CameraTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
-export type CameraTargetSwitchMode = 'preset' | 'preserve-view';
-export type CameraPointTarget = 'none' | 'sun' | 'earth' | 'moon' | 'spacecraft';
+export type AnchorTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
+export type AnchorTargetSwitchMode = 'preset' | 'preserve-view';
+export type LookTarget = 'none' | 'sun' | 'earth' | 'moon' | 'spacecraft';
 export type MissionMode = 'live' | 'scrub';
 export type ReferenceFrame = 'GCRS' | 'BCRS';
 export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'gravity' | 'camera' | 'planning';
@@ -16,9 +16,9 @@ interface MissionState {
   mode: MissionMode;
   playbackSpeed: number;
   isPlaying: boolean;
-  cameraTarget: CameraTarget;
-  cameraTargetSwitchMode: CameraTargetSwitchMode;
-  cameraPointTarget: CameraPointTarget;
+  anchorTarget: AnchorTarget;
+  anchorTargetSwitchMode: AnchorTargetSwitchMode;
+  lookTarget: LookTarget;
   referenceFrame: ReferenceFrame;
   showStars: boolean;
   showObjectAxes: boolean;
@@ -42,10 +42,10 @@ interface MissionState {
   setMode: (mode: MissionMode) => void;
   setPlaybackSpeed: (speed: number) => void;
   setIsPlaying: (playing: boolean) => void;
-  setCameraTarget: (target: CameraTarget, options?: { preserveView?: boolean }) => void;
-  setCameraPointTarget: (target: CameraPointTarget) => void;
-  clearCameraPointTarget: () => void;
-  consumeCameraTargetSwitchMode: () => void;
+  setAnchorTarget: (target: AnchorTarget, options?: { preserveView?: boolean }) => void;
+  setLookTarget: (target: LookTarget) => void;
+  clearLookTarget: () => void;
+  consumeAnchorTargetSwitchMode: () => void;
   setReferenceFrame: (frame: ReferenceFrame) => void;
   setShowStars: (show: boolean) => void;
   setShowObjectAxes: (show: boolean) => void;
@@ -69,9 +69,9 @@ export const useMissionStore = create<MissionState>((set) => ({
   mode: 'live',
   playbackSpeed: 60,
   isPlaying: false,
-  cameraTarget: 'overview',
-  cameraTargetSwitchMode: 'preset',
-  cameraPointTarget: 'none',
+  anchorTarget: 'overview',
+  anchorTargetSwitchMode: 'preset',
+  lookTarget: 'none',
   referenceFrame: 'GCRS',
   showStars: true,
   showObjectAxes: true,
@@ -100,14 +100,14 @@ export const useMissionStore = create<MissionState>((set) => ({
     })),
   setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
-  setCameraTarget: (cameraTarget, options) =>
+  setAnchorTarget: (anchorTarget, options) =>
     set({
-      cameraTarget,
-      cameraTargetSwitchMode: options?.preserveView ? 'preserve-view' : 'preset',
+      anchorTarget,
+      anchorTargetSwitchMode: options?.preserveView ? 'preserve-view' : 'preset',
     }),
-  setCameraPointTarget: (cameraPointTarget) => set({ cameraPointTarget }),
-  clearCameraPointTarget: () => set({ cameraPointTarget: 'none' }),
-  consumeCameraTargetSwitchMode: () => set({ cameraTargetSwitchMode: 'preset' }),
+  setLookTarget: (lookTarget) => set({ lookTarget }),
+  clearLookTarget: () => set({ lookTarget: 'none' }),
+  consumeAnchorTargetSwitchMode: () => set({ anchorTargetSwitchMode: 'preset' }),
   setReferenceFrame: (referenceFrame) => set({ referenceFrame }),
   setShowStars: (showStars) => set({ showStars }),
   setShowObjectAxes: (showObjectAxes) => set({ showObjectAxes }),
@@ -123,7 +123,7 @@ export const useMissionStore = create<MissionState>((set) => ({
     set({ cameraPosition, cameraForward, cameraUp }),
   requestCameraAim: (cameraAimDirection) =>
     set((state) => ({
-      cameraPointTarget: 'none',
+      lookTarget: 'none',
       cameraAimDirection,
       cameraAimRequestId: state.cameraAimRequestId + 1,
     })),

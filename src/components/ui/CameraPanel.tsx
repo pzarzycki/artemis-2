@@ -1,9 +1,9 @@
 import { useMissionStore } from '../../store/missionStore';
 import { useMemo, useState, type ReactNode } from 'react';
-import type { CameraPointTarget } from '../../store/missionStore';
+import type { LookTarget } from '../../store/missionStore';
 import styles from './CameraPanel.module.css';
 
-const CAMERA_POINT_TARGETS: { id: CameraPointTarget; label: string }[] = [
+const LOOK_TARGET_OPTIONS: { id: LookTarget; label: string }[] = [
   { id: 'none', label: 'None' },
   { id: 'sun', label: 'Sun' },
   { id: 'earth', label: 'Earth' },
@@ -127,8 +127,8 @@ export default function CameraPanel() {
   const cameraPosition = useMissionStore((s) => s.cameraPosition);
   const cameraForward = useMissionStore((s) => s.cameraForward);
   const cameraUp = useMissionStore((s) => s.cameraUp);
-  const cameraPointTarget = useMissionStore((s) => s.cameraPointTarget);
-  const setCameraPointTarget = useMissionStore((s) => s.setCameraPointTarget);
+  const lookTarget = useMissionStore((s) => s.lookTarget);
+  const setLookTarget = useMissionStore((s) => s.setLookTarget);
   const requestCameraAim = useMissionStore((s) => s.requestCameraAim);
   const openDialog = useMissionStore((s) => s.openDialog);
   const [raInput, setRaInput] = useState('0');
@@ -281,11 +281,11 @@ export default function CameraPanel() {
             <div className={styles.selectWrap}>
               <select
                 className={styles.select}
-                value={cameraPointTarget}
-                onChange={(event) => setCameraPointTarget(event.target.value as CameraPointTarget)}
+                value={lookTarget}
+                onChange={(event) => setLookTarget(event.target.value as LookTarget)}
                 aria-label="Automatic camera point target"
               >
-                {CAMERA_POINT_TARGETS.map(({ id, label }) => (
+                {LOOK_TARGET_OPTIONS.map(({ id, label }) => (
                   <option key={id} value={id}>
                     {label}
                   </option>

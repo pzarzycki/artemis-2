@@ -23,14 +23,6 @@ function XIcon() {
   );
 }
 
-function GitHubIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className={`${styles.actionIcon} ${styles.githubIcon}`} aria-hidden="true">
-      <path d="M9.1 18.6c-3 .9-3-1.5-4.2-1.8m8.4 3.6v-2.4c0-.7 0-1.3-.3-1.8 2.8-.3 5.8-1.4 5.8-6.3 0-1.4-.5-2.5-1.3-3.4.1-.3.6-1.6-.1-3.3 0 0-1.1-.3-3.6 1.3a12 12 0 0 0-6.6 0C4.7 2.9 3.6 3.2 3.6 3.2c-.7 1.7-.2 3-.1 3.3A4.9 4.9 0 0 0 2.2 10c0 4.9 3 6 5.8 6.3-.2.5-.3 1-.3 1.8v2.4" />
-    </svg>
-  );
-}
-
 function StarIcon() {
   return (
     <svg viewBox="0 0 24 24" className={`${styles.actionIcon} ${styles.starIcon}`} aria-hidden="true">

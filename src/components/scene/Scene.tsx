@@ -51,10 +51,10 @@ function CameraTelemetry() {
 }
 
 export default function Scene() {
-  const cameraTarget = useMissionStore((s) => s.cameraTarget);
-  const cameraTargetSwitchMode = useMissionStore((s) => s.cameraTargetSwitchMode);
-  const cameraPointTarget = useMissionStore((s) => s.cameraPointTarget);
-  const consumeCameraTargetSwitchMode = useMissionStore((s) => s.consumeCameraTargetSwitchMode);
+  const anchorTarget = useMissionStore((s) => s.anchorTarget);
+  const anchorTargetSwitchMode = useMissionStore((s) => s.anchorTargetSwitchMode);
+  const lookTarget = useMissionStore((s) => s.lookTarget);
+  const consumeAnchorTargetSwitchMode = useMissionStore((s) => s.consumeAnchorTargetSwitchMode);
   const showStars = useMissionStore((s) => s.showStars);
   const showObjectAxes = useMissionStore((s) => s.showObjectAxes);
   const showTrajectory = useMissionStore((s) => s.showTrajectory);
@@ -110,15 +110,15 @@ export default function Scene() {
         )}
 
         <CameraRig
-          target={cameraTarget}
-          targetSwitchMode={cameraTargetSwitchMode}
-          pointTarget={cameraPointTarget}
+          anchorTarget={anchorTarget}
+          anchorTargetSwitchMode={anchorTargetSwitchMode}
+          lookTarget={lookTarget}
           referenceFrame={scene.referenceFrame}
           sunWorld={scene.sunWorld}
           earthWorld={scene.earthWorld}
           moonWorld={scene.moonWorld}
           spacecraftWorld={scene.spacecraftWorld}
-          consumeTargetSwitchMode={consumeCameraTargetSwitchMode}
+          consumeAnchorTargetSwitchMode={consumeAnchorTargetSwitchMode}
         />
         <WorldHud />
       </Suspense>
