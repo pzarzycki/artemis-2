@@ -1,0 +1,258 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(3, 5, 10, 0.58);
+  z-index: 35;
+}
+
+.dialog {
+  width: min(980px, 100%);
+  overflow: hidden;
+}
+
+.header {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(182, 225, 255, 0.14);
+  background:
+    radial-gradient(circle at top left, rgba(0, 212, 170, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(18, 28, 46, 0.98), rgba(12, 18, 31, 0.96));
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(126, 240, 255, 0.82);
+}
+
+.title {
+  margin-top: 4px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #f4fbff;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 16px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel {
+  padding: 10px 12px;
+  border: 1px solid rgba(182, 225, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(10, 18, 28, 0.72);
+}
+
+.panelTitle {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(223, 233, 242, 0.7);
+}
+
+.mouseRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mouseItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 4px 6px;
+  min-width: 0;
+}
+
+.iconWrap,
+.anchorIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 10px;
+  background: rgba(126, 240, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(126, 240, 255, 0.08);
+}
+
+.iconSvg {
+  width: 22px;
+  height: 22px;
+}
+
+.iconStroke {
+  fill: none;
+  stroke: rgba(236, 247, 255, 0.92);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iconAccent {
+  fill: none;
+  stroke: #7ef0ff;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iconAccentFill {
+  fill: rgba(126, 240, 255, 0.95);
+}
+
+.iconMuted {
+  fill: none;
+  stroke: rgba(236, 247, 255, 0.28);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iconMutedFill {
+  fill: rgba(236, 247, 255, 0.22);
+}
+
+.rowText,
+.anchorTitle {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(236, 247, 255, 0.9);
+}
+
+.mouseLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(236, 247, 255, 0.92);
+}
+
+.mouseContent {
+  min-width: 0;
+}
+
+.mouseText {
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(223, 233, 242, 0.76);
+}
+
+.anchorTitle {
+  font-weight: 700;
+}
+
+.anchorCallout {
+  display: flex;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(182, 225, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(10, 18, 28, 0.72);
+}
+
+.anchorText {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(223, 233, 242, 0.82);
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.infoGridSingle {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.infoGridDouble {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.infoItem {
+  min-width: 0;
+}
+
+.infoLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(236, 247, 255, 0.9);
+}
+
+.infoText {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(223, 233, 242, 0.76);
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  font-size: 13px;
+  color: rgba(228, 240, 252, 0.9);
+  cursor: pointer;
+}
+
+.checkboxRow input {
+  width: 15px;
+  height: 15px;
+  accent-color: #00d4aa;
+}
+
+.button {
+  align-self: flex-end;
+  min-width: 124px;
+  padding: 9px 14px;
+  border: 1px solid rgba(0, 212, 170, 0.22);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(0, 212, 170, 0.22), rgba(0, 160, 128, 0.14));
+  color: #f4fbff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .columns,
+  .infoGrid,
+  .infoGridDouble {
+    grid-template-columns: 1fr;
+  }
+
+  .mouseItem {
+    padding: 4px 0;
+  }
+}

@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
+  classifyGravityInfluence,
+  computeGravityMagnitude,
   computeGravityProjection,
   computeNeutralRadius,
-  computeGravityFieldMaxProj,
+  computeGravityFieldMagnitudeScale,
   GM_EARTH,
   GM_MOON,
 } from '../gravity';
@@ -72,6 +74,49 @@ describe('computeGravityProjection', () => {
     const expected = GM_MOON / (dr * dr) - GM_EARTH / (r * r);
     expect(proj).toBeCloseTo(expected, 12);
   });
+
+  it('keeps the same Earth/Moon classification for off-axis points in the aligned slice', () => {
+    const moonPos: [number, number, number] = [MOON_DIST / Math.SQRT2, MOON_DIST / Math.SQRT2, 0];
+    const point: [number, number, number] = [120_000, 140_000, 40_000];
+    expect(classifyGravityInfluence(point, moonPos)).toBe('earth');
+  });
+});
+
+// ── computeGravityMagnitude / classifyGravityInfluence ───────────────────────
+
+describe('computeGravityMagnitude', () => {
+  it('returns a positive finite value away from singularities', () => {
+    const magnitude = computeGravityMagnitude([200_000, 50_000, 0], [MOON_DIST, 0, 0]);
+    expect(magnitude).toBeGreaterThan(0);
+    expect(isFinite(magnitude)).toBe(true);
+  });
+
+  it('is larger than the axis projection when the field has off-axis components', () => {
+    const pos: [number, number, number] = [240_000, 80_000, 60_000];
+    const magnitude = computeGravityMagnitude(pos, [MOON_DIST, 0, 0]);
+    const projection = Math.abs(computeGravityProjection(pos, [MOON_DIST, 0, 0]));
+    expect(magnitude).toBeGreaterThan(projection);
+  });
+});
+
+describe('classifyGravityInfluence', () => {
+  it('classifies Earth-dominant points as earth', () => {
+    expect(classifyGravityInfluence([100_000, 0, 0], [MOON_DIST, 0, 0])).toBe('earth');
+  });
+
+  it('classifies Moon-dominant points as moon', () => {
+    expect(classifyGravityInfluence([MOON_DIST - 5_000, 0, 0], [MOON_DIST, 0, 0])).toBe('moon');
+  });
+
+  it('classifies the static equal-influence point as neutral', () => {
+    const nr = computeNeutralRadius(MOON_DIST);
+    expect(classifyGravityInfluence([nr, 0, 0], [MOON_DIST, 0, 0])).toBe('neutral');
+  });
+
+  it('uses stronger-body influence rather than net-vector direction', () => {
+    const point: [number, number, number] = [150_000, 120_000, 0];
+    expect(classifyGravityInfluence(point, [MOON_DIST, 0, 0])).toBe('earth');
+  });
 });
 
 // ── computeNeutralRadius ──────────────────────────────────────────────────────
@@ -107,29 +152,24 @@ describe('computeNeutralRadius', () => {
   });
 });
 
-// ── computeGravityFieldMaxProj ────────────────────────────────────────────────
+// ── computeGravityFieldMagnitudeScale ─────────────────────────────────────────
 
-describe('computeGravityFieldMaxProj', () => {
+describe('computeGravityFieldMagnitudeScale', () => {
   it('returns a positive finite value', () => {
-    const max = computeGravityFieldMaxProj(MOON_DIST);
-    expect(max).toBeGreaterThan(0);
-    expect(isFinite(max)).toBe(true);
+    const scale = computeGravityFieldMagnitudeScale(MOON_DIST);
+    expect(scale).toBeGreaterThan(0);
+    expect(isFinite(scale)).toBe(true);
   });
 
-  it('the neutral-point projection is smaller than maxProj (transition zone is unsaturated)', () => {
-    const nr = computeNeutralRadius(MOON_DIST);
-    const maxProj = computeGravityFieldMaxProj(MOON_DIST);
-
-    // On the axis just inside the neutral point — value must be less than maxProj
-    const nearNeutral = computeGravityProjection([nr - 5_000, 0, 0], [MOON_DIST, 0, 0]);
-    expect(Math.abs(nearNeutral)).toBeLessThan(maxProj);
+  it('uses a reference strength smaller than the near-Earth field', () => {
+    const scale = computeGravityFieldMagnitudeScale(MOON_DIST);
+    const nearEarth = computeGravityMagnitude([20_000, 0, 0], [MOON_DIST, 0, 0]);
+    expect(scale).toBeLessThan(nearEarth);
   });
 
-  it('the near-Moon projection is larger than maxProj (region saturates to full blue)', () => {
-    const maxProj = computeGravityFieldMaxProj(MOON_DIST);
-
-    // 2 000 km from Moon – well inside the transition zone
-    const nearMoon = computeGravityProjection([MOON_DIST - 2_000, 0, 0], [MOON_DIST, 0, 0]);
-    expect(nearMoon).toBeGreaterThan(maxProj);
+  it('uses a reference strength larger than the far-field background', () => {
+    const scale = computeGravityFieldMagnitudeScale(MOON_DIST);
+    const farField = computeGravityMagnitude([0, 400_000, 0], [MOON_DIST, 0, 0]);
+    expect(scale).toBeGreaterThan(farField);
   });
 });

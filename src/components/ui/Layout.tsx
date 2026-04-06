@@ -10,11 +10,29 @@ import AssetLoadingOverlay from './AssetLoadingOverlay';
 import FrameSelector from './FrameSelector';
 import SceneControls from './SceneControls';
 import CameraPanel from './CameraPanel';
+import ControlsNotice from './ControlsNotice';
 import StartupNotice from './StartupNotice';
+import WebGLErrorNotice from './WebGLErrorNotice';
 import styles from './Layout.module.css';
 
 const MIN_DESKTOP_WIDTH = 1100;
 const MIN_DESKTOP_HEIGHT = 650;
+const CONTROLS_NOTICE_STORAGE_KEY = 'artemis2:hide-controls-notice';
+
+function hasWebGLSupport() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return true;
+
+  const canvas = document.createElement('canvas');
+
+  try {
+    return Boolean(
+      window.WebGLRenderingContext &&
+        (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')),
+    );
+  } catch {
+    return false;
+  }
+}
 
 function shouldShowStartupNotice() {
   if (typeof window === 'undefined') return false;
@@ -29,29 +47,59 @@ function shouldShowStartupNotice() {
 }
 
 export default function Layout() {
+  const [hasWebGL, setHasWebGL] = useState(true);
   const [showStartupNotice, setShowStartupNotice] = useState(false);
+  const [showControlsNotice, setShowControlsNotice] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    if (!hasWebGLSupport()) {
+      setHasWebGL(false);
+      return;
+    }
+
     if (shouldShowStartupNotice()) {
       setShowStartupNotice(true);
+      return;
+    }
+
+    if (!window.localStorage.getItem(CONTROLS_NOTICE_STORAGE_KEY)) {
+      setShowControlsNotice(true);
     }
   }, []);
 
-  const dismissStartupNotice = () => setShowStartupNotice(false);
+  const dismissStartupNotice = () => {
+    setShowStartupNotice(false);
+    if (typeof window !== 'undefined' && !window.localStorage.getItem(CONTROLS_NOTICE_STORAGE_KEY)) {
+      setShowControlsNotice(true);
+    }
+  };
+
+  const dismissControlsNotice = (dontShowAgain: boolean) => {
+    if (typeof window !== 'undefined') {
+      if (dontShowAgain) {
+        window.localStorage.setItem(CONTROLS_NOTICE_STORAGE_KEY, '1');
+      } else {
+        window.localStorage.removeItem(CONTROLS_NOTICE_STORAGE_KEY);
+      }
+    }
+    setShowControlsNotice(false);
+  };
 
   return (
     <Suspense fallback={<LoadingOverlay message="Loading mission data…" />}>
       <div className={styles.root}>
-        <ErrorBoundary>
-          <div className={styles.canvas}>
-            <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" sceneOnly />}>
-              <Scene />
-            </Suspense>
-            <AssetLoadingOverlay />
-          </div>
-        </ErrorBoundary>
+        {hasWebGL && (
+          <ErrorBoundary>
+            <div className={styles.canvas}>
+              <Suspense fallback={<LoadingOverlay message="Loading 3D scene…" sceneOnly />}>
+                <Scene />
+              </Suspense>
+              <AssetLoadingOverlay />
+            </div>
+          </ErrorBoundary>
+        )}
         <div className={styles.hud}>
           <StatusBar />
           <CameraPanel />
@@ -67,7 +115,11 @@ export default function Layout() {
             <Timeline />
           </div>
         </div>
-        {showStartupNotice && <StartupNotice onDismiss={dismissStartupNotice} />}
+        {!hasWebGL && <WebGLErrorNotice />}
+        {hasWebGL && showStartupNotice && <StartupNotice onDismiss={dismissStartupNotice} />}
+        {hasWebGL && !showStartupNotice && showControlsNotice && (
+          <ControlsNotice onDismiss={dismissControlsNotice} />
+        )}
       </div>
     </Suspense>
   );

@@ -104,6 +104,7 @@ export default function Scene() {
           <GravityField
             earthPos={scene.earthWorld}
             moonPos={scene.moonWorld}
+            spacecraftPos={scene.spacecraftWorld}
           />
         )}
 

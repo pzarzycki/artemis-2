@@ -1,7 +1,12 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { GM_EARTH, GM_MOON, EARTH_RADIUS_KM, computeGravityFieldMaxProj } from '../../lib/gravity';
+import {
+  GM_EARTH,
+  GM_MOON,
+  EARTH_RADIUS_KM,
+  computeGravityFieldMagnitudeScale,
+} from '../../lib/gravity';
 
 // Disk extends slightly beyond the Moon's average orbital radius
 const DISK_RADIUS = 430_000; // km
@@ -20,14 +25,13 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-// Fragment shader: compute per-pixel gravity projection and map to colour
+// Fragment shader: compute per-pixel gravity direction and total field strength
 const fragmentShader = /* glsl */ `
   varying vec3 vWorldPos;
 
   uniform vec3  uEarthPos;      // Earth world position (km)
   uniform vec3  uMoonPos;       // Moon world position (km)
-  uniform vec3  uEarthMoonDir;  // Unit vector Earth → Moon
-  uniform float uMaxProj;       // Colour-scale normalisation (km/s²)
+  uniform float uMagnitudeScale; // Half-intensity reference magnitude (km/s²)
 
   // Physical constants (km³/s²)
   const float GM_EARTH = ${GM_EARTH.toFixed(4)};
@@ -57,26 +61,24 @@ const fragmentShader = /* glsl */ `
     vec3 acc_earth = (-relPos / r_earth) * a_earth;
     vec3 acc_moon  = ( toMoon / r_moon ) * a_moon;
 
-    // Project net acceleration onto the Earth-Moon axis
-    // Positive  → net force towards Moon  (blue)
-    // Negative  → net force towards Earth (orange)
-    float proj = dot(acc_earth + acc_moon, uEarthMoonDir);
+    vec3 net_acc = acc_earth + acc_moon;
 
-    // Normalise to [-1, 1]; values outside the range saturate to full colour
-    float t    = clamp(proj / uMaxProj, -1.0, 1.0);
-    float abst = abs(t);
+    // Intensity uses the magnitude of the total combined field, compressed into
+    // [0, 1] with a monotonic saturating response to preserve contrast.
+    float total_mag = length(net_acc);
+    float strength = total_mag / (total_mag + uMagnitudeScale);
 
     // Colour map: blue / black / orange
     vec3 blueColor   = vec3(0.0, 0.4, 1.0);
     vec3 orangeColor = vec3(1.0, 0.5, 0.0);
     vec3 black       = vec3(0.0, 0.0, 0.0);
 
-    vec3 color = (t > 0.0)
-      ? mix(black, blueColor,   abst)
-      : mix(black, orangeColor, abst);
+    vec3 color = (a_moon > a_earth)
+      ? mix(black, blueColor,   strength)
+      : mix(black, orangeColor, strength);
 
     // Alpha: semi-transparent throughout, stronger field → slightly more opaque
-    float alpha = 0.55 * (0.15 + 0.85 * abst);
+    float alpha = 0.55 * (0.15 + 0.85 * strength);
 
     // Smooth fade so the disk doesn't clip visibly into the Earth sphere
     float earthFade = smoothstep(EARTH_RADIUS, EARTH_RADIUS + FADE_DIST, r_earth);
@@ -88,10 +90,25 @@ const fragmentShader = /* glsl */ `
 interface GravityFieldProps {
   earthPos: [number, number, number];
   moonPos: [number, number, number];
+  spacecraftPos: [number, number, number] | null;
 }
 
-export default function GravityField({ earthPos, moonPos }: GravityFieldProps) {
+export default function GravityField({ earthPos, moonPos, spacecraftPos }: GravityFieldProps) {
   const groupRef = useRef<THREE.Group>(null!);
+  const frameState = useMemo(() => ({
+    earth: new THREE.Vector3(),
+    moon: new THREE.Vector3(),
+    spacecraft: new THREE.Vector3(),
+    moonRel: new THREE.Vector3(),
+    spacecraftRel: new THREE.Vector3(),
+    planeXAxis: new THREE.Vector3(),
+    planeYAxis: new THREE.Vector3(),
+    planeYFallback: new THREE.Vector3(),
+    planeNormal: new THREE.Vector3(),
+    referenceAxis: new THREE.Vector3(),
+    rotationMatrix: new THREE.Matrix4(),
+    meshScale: new THREE.Vector3(1, 1, 1),
+  }), []);
 
   // Flat disk in the XY plane; orientation is set each frame via the group
   const geometry = useMemo(
@@ -107,10 +124,9 @@ export default function GravityField({ earthPos, moonPos }: GravityFieldProps) {
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          uEarthPos:    { value: new THREE.Vector3(...earthPos) },
-          uMoonPos:     { value: new THREE.Vector3(...moonPos)  },
-          uEarthMoonDir:{ value: new THREE.Vector3(1, 0, 0)     },
-          uMaxProj:     { value: 2e-6                           },
+          uEarthPos:        { value: new THREE.Vector3(...earthPos) },
+          uMoonPos:         { value: new THREE.Vector3(...moonPos)  },
+          uMagnitudeScale:  { value: 2e-6                           },
         },
         vertexShader,
         fragmentShader,
@@ -123,29 +139,68 @@ export default function GravityField({ earthPos, moonPos }: GravityFieldProps) {
   );
 
   useFrame(() => {
-    const ep = new THREE.Vector3(...earthPos);
-    const mp = new THREE.Vector3(...moonPos);
-    const moonRel = mp.clone().sub(ep);
+    const {
+      earth,
+      moon,
+      spacecraft,
+      moonRel,
+      spacecraftRel,
+      planeXAxis,
+      planeYAxis,
+      planeYFallback,
+      planeNormal,
+      referenceAxis,
+      rotationMatrix,
+      meshScale,
+    } = frameState;
+
+    earth.set(...earthPos);
+    moon.set(...moonPos);
+    moonRel.subVectors(moon, earth);
     const moonDist = moonRel.length();
     if (moonDist < 1) return;
 
-    const earthMoonDir = moonRel.clone().normalize();
+    const earthMoonDir = planeXAxis.copy(moonRel).normalize();
+    const spacecraftDist = spacecraftPos
+      ? spacecraftRel.subVectors(spacecraft.set(...spacecraftPos), earth).length()
+      : 0;
 
-    // Disk lies in the equatorial (XY) plane, centred on Earth.
-    // CircleGeometry is already in the XY plane (normal = +Z), so no rotation
-    // is needed.  This makes the disk visible face-on from the default overview
-    // camera (which looks down the ECI-Z axis) and roughly contains both Earth
-    // and the Moon, whose orbit is only ~5° from the equatorial plane.
-    groupRef.current.position.copy(ep);
+    // Rotate the disk into a stable plane that contains Earth, Moon, and the
+    // spacecraft whenever the spacecraft is not collinear with the Earth-Moon axis.
+    if (spacecraftDist > 1) {
+      planeYFallback
+        .copy(spacecraftRel)
+        .addScaledVector(earthMoonDir, -spacecraftRel.dot(earthMoonDir));
+    } else {
+      planeYFallback.set(0, 0, 0);
+    }
+
+    if (planeYFallback.lengthSq() < 1) {
+      referenceAxis.set(0, 0, 1);
+      if (Math.abs(earthMoonDir.dot(referenceAxis)) > 0.98) {
+        referenceAxis.set(0, 1, 0);
+      }
+      planeYFallback
+        .copy(referenceAxis)
+        .addScaledVector(earthMoonDir, -referenceAxis.dot(earthMoonDir));
+    }
+
+    planeYAxis.copy(planeYFallback).normalize();
+    planeNormal.crossVectors(earthMoonDir, planeYAxis).normalize();
+
+    rotationMatrix.makeBasis(earthMoonDir, planeYAxis, planeNormal);
+    groupRef.current.position.copy(earth);
+    groupRef.current.setRotationFromMatrix(rotationMatrix);
+    meshScale.setScalar(Math.max(moonDist, spacecraftDist, DISK_RADIUS) / DISK_RADIUS);
+    groupRef.current.scale.copy(meshScale);
 
     // Update shader uniforms every frame so the field reacts to body motion
-    material.uniforms.uEarthPos.value.copy(ep);
-    material.uniforms.uMoonPos.value.copy(mp);
-    material.uniforms.uEarthMoonDir.value.copy(earthMoonDir);
+    material.uniforms.uEarthPos.value.copy(earth);
+    material.uniforms.uMoonPos.value.copy(moon);
 
-    // Dynamic normalisation: scales with Moon's distance so the transition
-    // zone is always clearly visible regardless of orbital position
-    material.uniforms.uMaxProj.value = computeGravityFieldMaxProj(moonDist);
+    // Dynamic strength scale keeps the Earth-Moon transition legible while the
+    // hue follows which body's individual gravity is stronger at each point.
+    material.uniforms.uMagnitudeScale.value = computeGravityFieldMagnitudeScale(moonDist);
   });
 
   return (

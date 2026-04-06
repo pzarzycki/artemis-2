@@ -6,13 +6,57 @@ export const GM_MOON = 4902.8;
 export const EARTH_RADIUS_KM = 6371;
 export const MOON_RADIUS_KM = 1737.4;
 
+type Vec3 = [number, number, number];
+
+function computeGravityVector(posKm: Vec3, moonPosKm: Vec3): Vec3 {
+  const [px, py, pz] = posKm;
+  const [mx, my, mz] = moonPosKm;
+
+  const rEarth = Math.sqrt(px * px + py * py + pz * pz);
+  if (rEarth < 1) return [0, 0, 0];
+
+  const dmx = mx - px;
+  const dmy = my - py;
+  const dmz = mz - pz;
+  const rMoon = Math.sqrt(dmx * dmx + dmy * dmy + dmz * dmz);
+  if (rMoon < 1) return [0, 0, 0];
+
+  const aEarth = GM_EARTH / (rEarth * rEarth);
+  const aMoon = GM_MOON / (rMoon * rMoon);
+
+  return [
+    (-px / rEarth) * aEarth + (dmx / rMoon) * aMoon,
+    (-py / rEarth) * aEarth + (dmy / rMoon) * aMoon,
+    (-pz / rEarth) * aEarth + (dmz / rMoon) * aMoon,
+  ];
+}
+
+function computeBodyGravityMagnitudes(posKm: Vec3, moonPosKm: Vec3): { earth: number; moon: number } {
+  const [px, py, pz] = posKm;
+  const [mx, my, mz] = moonPosKm;
+
+  const rEarth = Math.sqrt(px * px + py * py + pz * pz);
+  if (rEarth < 1) return { earth: 0, moon: 0 };
+
+  const dmx = mx - px;
+  const dmy = my - py;
+  const dmz = mz - pz;
+  const rMoon = Math.sqrt(dmx * dmx + dmy * dmy + dmz * dmz);
+  if (rMoon < 1) return { earth: 0, moon: 0 };
+
+  return {
+    earth: GM_EARTH / (rEarth * rEarth),
+    moon: GM_MOON / (rMoon * rMoon),
+  };
+}
+
 /**
  * Computes the net gravitational acceleration from Earth and Moon at a given
  * point, projected onto the Earth-Moon direction (unit vector from Earth to Moon).
  *
  * Positive result  → net force component towards Moon  (Moon dominates)
  * Negative result  → net force component towards Earth (Earth dominates)
- * Zero             → neutral point (L1 Lagrange point on the Earth-Moon axis)
+ * Zero             → static gravity-balance point on the Earth-Moon axis
  *
  * @param posKm     - Point position in Earth-centred coordinates (km)
  * @param moonPosKm - Moon position in Earth-centred coordinates (km)
@@ -20,43 +64,37 @@ export const MOON_RADIUS_KM = 1737.4;
  *          axis (km/s²). Returns 0 for degenerate inputs.
  */
 export function computeGravityProjection(
-  posKm: [number, number, number],
-  moonPosKm: [number, number, number],
+  posKm: Vec3,
+  moonPosKm: Vec3,
 ): number {
-  const [px, py, pz] = posKm;
+  const [gx, gy, gz] = computeGravityVector(posKm, moonPosKm);
   const [mx, my, mz] = moonPosKm;
 
-  const r_earth = Math.sqrt(px * px + py * py + pz * pz);
-  if (r_earth < 1) return 0;
-
-  const dmx = mx - px;
-  const dmy = my - py;
-  const dmz = mz - pz;
-  const r_moon = Math.sqrt(dmx * dmx + dmy * dmy + dmz * dmz);
-  if (r_moon < 1) return 0;
-
-  // Gravitational acceleration magnitudes (km/s²)
-  const a_earth = GM_EARTH / (r_earth * r_earth);
-  const a_moon = GM_MOON / (r_moon * r_moon);
-
-  // Acceleration vectors (towards respective body)
-  const aex = (-px / r_earth) * a_earth;
-  const aey = (-py / r_earth) * a_earth;
-  const aez = (-pz / r_earth) * a_earth;
-
-  const amx = (dmx / r_moon) * a_moon;
-  const amy = (dmy / r_moon) * a_moon;
-  const amz = (dmz / r_moon) * a_moon;
-
-  // Earth-Moon unit vector
   const moonDist = Math.sqrt(mx * mx + my * my + mz * mz);
   if (moonDist < 1) return 0;
-  const ex = mx / moonDist;
-  const ey = my / moonDist;
-  const ez = mz / moonDist;
 
-  // Net acceleration projected onto Earth-Moon direction
-  return (aex + amx) * ex + (aey + amy) * ey + (aez + amz) * ez;
+  return (gx * mx + gy * my + gz * mz) / moonDist;
+}
+
+/**
+ * Computes the magnitude of the combined Earth+Moon gravitational acceleration
+ * at a point in Earth-centred coordinates.
+ */
+export function computeGravityMagnitude(posKm: Vec3, moonPosKm: Vec3): number {
+  const [gx, gy, gz] = computeGravityVector(posKm, moonPosKm);
+  return Math.sqrt(gx * gx + gy * gy + gz * gz);
+}
+
+/**
+ * Classifies whether Earth's or Moon's individual gravitational influence is
+ * stronger at the point.
+ */
+export function classifyGravityInfluence(posKm: Vec3, moonPosKm: Vec3): 'earth' | 'moon' | 'neutral' {
+  const { earth, moon } = computeBodyGravityMagnitudes(posKm, moonPosKm);
+  const difference = moon - earth;
+  if (difference > 1e-10) return 'moon';
+  if (difference < -1e-10) return 'earth';
+  return 'neutral';
 }
 
 /**
@@ -84,26 +122,24 @@ export function computeNeutralRadius(moonDist: number): number {
 }
 
 /**
- * Computes the colour-scale normalisation factor for the gravity-field
- * visualisation.  Values at ±maxProj saturate to full blue / full orange;
- * the L1 transition zone sits comfortably within the unsaturated range.
+ * Computes the reference magnitude used to map total gravity strength into the
+ * visual intensity range for the gravity-field shader.
  *
- * Reference point: half-way between L1 and the Moon (inside the Hill sphere),
- * where the Moon's gravity just exceeds Earth's.
+ * Reference point: half-way between the static neutral radius and the Moon.
+ * The shader uses this as the half-intensity point in a saturating response,
+ * so stronger fields still trend brighter without collapsing the whole Earth
+ * side of the slice to a single flat colour.
  *
  * @param moonDist - Earth-to-Moon distance (km)
- * @returns Normalisation constant (km/s²)
+ * @returns Reference magnitude (km/s²)
  */
-export function computeGravityFieldMaxProj(moonDist: number): number {
-  const rHill = moonDist * Math.cbrt(GM_MOON / (3 * GM_EARTH));
-  // Reference point is halfway between L1 and Moon surface
-  const refFromEarth = moonDist - rHill * 0.5;
-  const refFromMoon = moonDist - refFromEarth; // = rHill * 0.5
+export function computeGravityFieldMagnitudeScale(moonDist: number): number {
+  const neutralRadius = computeNeutralRadius(moonDist);
+  const refFromEarth = neutralRadius + (moonDist - neutralRadius) * 0.5;
+  if (refFromEarth <= 0 || refFromEarth >= moonDist) return 1e-6;
 
-  if (refFromEarth <= 0 || refFromMoon <= 0) return 1e-6;
-
-  const earthGrav = GM_EARTH / (refFromEarth * refFromEarth);
-  const moonGrav = GM_MOON / (refFromMoon * refFromMoon);
-
-  return Math.max(Math.abs(moonGrav - earthGrav), 1e-9);
+  return Math.max(
+    computeGravityMagnitude([refFromEarth, 0, 0], [moonDist, 0, 0]),
+    1e-9,
+  );
 }
