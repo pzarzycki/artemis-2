@@ -34,6 +34,11 @@ const DEFAULT_AIM_DISTANCE_FLOOR_KM = 1;
 const SPACECRAFT_AIM_DISTANCE_FLOOR_KM = 12;
 const DEFAULT_ANIMATION_SNAP_DISTANCE_KM = 1;
 const SPACECRAFT_ANIMATION_SNAP_DISTANCE_KM = 1;
+const DEFAULT_LOOK_TARGET_ROTATION_ALPHA = 0.18;
+const SPACECRAFT_LOOK_TARGET_ROTATION_ALPHA = 0.24;
+const DEFAULT_LOOK_TARGET_TRANSITION_FRAMES = 12;
+const SPACECRAFT_LOOK_TARGET_TRANSITION_FRAMES = 10;
+const MIN_OFFSET_DISTANCE_KM = 1;
 const WORLD_UP = new THREE.Vector3(0, 0, 1);
 const EARTH_CAMERA_OFFSET = new THREE.Vector3(15_000, 15_000, 17_000);
 const SPACECRAFT_CAMERA_OFFSET = new THREE.Vector3(90, 45, 60);
@@ -59,6 +64,61 @@ function getAnchorCenter(
     default:
       return null;
   }
+}
+
+function getLookTargetPoint(
+  lookTarget: LookTarget,
+  sunWorld: Vec3,
+  earthWorld: Vec3,
+  moonWorld: Vec3,
+  spacecraftWorld: Vec3 | null,
+): THREE.Vector3 | null {
+  switch (lookTarget) {
+    case 'sun':
+      return toVector3(sunWorld);
+    case 'earth':
+      return toVector3(earthWorld);
+    case 'moon':
+      return toVector3(moonWorld);
+    case 'spacecraft':
+      return spacecraftWorld ? toVector3(spacecraftWorld) : null;
+    case 'none':
+    default:
+      return null;
+  }
+}
+
+function getSafeOrbitAxis(direction: THREE.Vector3): THREE.Vector3 {
+  const axis = new THREE.Vector3().crossVectors(direction, WORLD_UP);
+  if (axis.lengthSq() > 1e-12) return axis.normalize();
+
+  axis.crossVectors(direction, new THREE.Vector3(1, 0, 0));
+  if (axis.lengthSq() > 1e-12) return axis.normalize();
+
+  return new THREE.Vector3(0, 1, 0);
+}
+
+function rotateOffsetToward(
+  currentOffset: THREE.Vector3,
+  desiredDirection: THREE.Vector3,
+  alpha: number,
+): THREE.Vector3 {
+  const radius = Math.max(currentOffset.length(), MIN_OFFSET_DISTANCE_KM);
+  const currentDirection = currentOffset.clone().normalize();
+  const angle = currentDirection.angleTo(desiredDirection);
+  if (angle < 1e-5) {
+    return desiredDirection.clone().multiplyScalar(radius);
+  }
+
+  const axis = new THREE.Vector3().crossVectors(currentDirection, desiredDirection);
+  const safeAxis = axis.lengthSq() > 1e-12 ? axis.normalize() : getSafeOrbitAxis(currentDirection);
+  const stepAngle = Math.min(angle, angle * alpha);
+  const nextDirection = currentDirection
+    .clone()
+    .applyQuaternion(new THREE.Quaternion().setFromAxisAngle(safeAxis, stepAngle))
+    .normalize();
+
+  return nextDirection.multiplyScalar(radius);
 }
 
 function getOverviewPreset(referenceFrame: ReferenceFrame): { position: THREE.Vector3; lookAt: THREE.Vector3 } {
@@ -104,9 +164,9 @@ function getAnchorPreset(anchorTarget: AnchorTarget, center: THREE.Vector3): { p
 export default function CameraRig({
   anchorTarget,
   anchorTargetSwitchMode,
-  lookTarget: _lookTarget,
+  lookTarget,
   referenceFrame,
-  sunWorld: _sunWorld,
+  sunWorld,
   earthWorld,
   moonWorld,
   spacecraftWorld,
@@ -120,13 +180,22 @@ export default function CameraRig({
   const animLockOffset = useRef<THREE.Vector3 | null>(null);
   const prevAnchorTarget = useRef<AnchorTarget | null>(null);
   const prevFrame = useRef<ReferenceFrame | null>(null);
+  const prevLookTarget = useRef<LookTarget>('none');
   const lastAnchorCenter = useRef<THREE.Vector3 | null>(null);
   const lastAimRequestId = useRef<number>(0);
+  const isUserInteracting = useRef(false);
+  const lookTargetTransitionFrames = useRef(0);
+  const prevCurrentJD = useRef(useMissionStore.getState().currentJD);
+  const prevIsPlaying = useRef(useMissionStore.getState().isPlaying);
 
   const cancelAnimatedMove = () => {
     animTargetPos.current = null;
     animLookAt.current = null;
     animLockOffset.current = null;
+  };
+
+  const cancelLookTargetTransition = () => {
+    lookTargetTransitionFrames.current = 0;
   };
 
   const syncControls = useCallback(() => {
@@ -183,19 +252,38 @@ export default function CameraRig({
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       cancelAnimatedMove();
+      cancelLookTargetTransition();
       translateAlongView(event.deltaY);
     };
+    const onStart = () => {
+      isUserInteracting.current = true;
+      cancelAnimatedMove();
+      cancelLookTargetTransition();
+    };
+    const onEnd = () => {
+      isUserInteracting.current = false;
+    };
+    const onPointerDown = () => {
+      cancelAnimatedMove();
+      cancelLookTargetTransition();
+    };
+    const onTouchStart = () => {
+      cancelAnimatedMove();
+      cancelLookTargetTransition();
+    };
 
-    controls.addEventListener('start', cancelAnimatedMove);
-    domElement.addEventListener('pointerdown', cancelAnimatedMove, { passive: true });
+    controls.addEventListener('start', onStart);
+    controls.addEventListener('end', onEnd);
+    domElement.addEventListener('pointerdown', onPointerDown, { passive: true });
     domElement.addEventListener('wheel', onWheel, { passive: false });
-    domElement.addEventListener('touchstart', cancelAnimatedMove, { passive: true });
+    domElement.addEventListener('touchstart', onTouchStart, { passive: true });
 
     return () => {
-      controls.removeEventListener('start', cancelAnimatedMove);
-      domElement.removeEventListener('pointerdown', cancelAnimatedMove);
+      controls.removeEventListener('start', onStart);
+      controls.removeEventListener('end', onEnd);
+      domElement.removeEventListener('pointerdown', onPointerDown);
       domElement.removeEventListener('wheel', onWheel);
-      domElement.removeEventListener('touchstart', cancelAnimatedMove);
+      domElement.removeEventListener('touchstart', onTouchStart);
     };
   }, [translateAlongView]);
 
@@ -240,8 +328,23 @@ export default function CameraRig({
     const controls = controlsRef.current;
     if (!controls) return;
     const lerpSpeed = anchorTarget === 'spacecraft' ? SPACECRAFT_LERP_SPEED : DEFAULT_LERP_SPEED;
+    const lookTargetRotationAlpha = anchorTarget === 'spacecraft'
+      ? SPACECRAFT_LOOK_TARGET_ROTATION_ALPHA
+      : DEFAULT_LOOK_TARGET_ROTATION_ALPHA;
+    const lookTargetTransitionFrameCount = anchorTarget === 'spacecraft'
+      ? SPACECRAFT_LOOK_TARGET_TRANSITION_FRAMES
+      : DEFAULT_LOOK_TARGET_TRANSITION_FRAMES;
 
     const store = useMissionStore.getState();
+    if (store.isPlaying && !prevIsPlaying.current) {
+      cancelLookTargetTransition();
+    }
+    if (store.currentJD !== prevCurrentJD.current) {
+      cancelLookTargetTransition();
+    }
+    prevCurrentJD.current = store.currentJD;
+    prevIsPlaying.current = store.isPlaying;
+
     if (store.cameraAimDirection && store.cameraAimRequestId !== lastAimRequestId.current) {
       const dir = new THREE.Vector3(...store.cameraAimDirection);
       if (dir.lengthSq() > 0) {
@@ -265,6 +368,57 @@ export default function CameraRig({
       moonWorld,
       spacecraftWorld,
     );
+    const targetPoint = getLookTargetPoint(
+      lookTarget,
+      sunWorld,
+      earthWorld,
+      moonWorld,
+      spacecraftWorld,
+    );
+    const currentSelectionCenter = currentAnchorCenter ?? controls.target.clone();
+
+    if (prevLookTarget.current !== lookTarget) {
+      prevLookTarget.current = lookTarget;
+      lookTargetTransitionFrames.current = lookTarget === 'none' ? 0 : lookTargetTransitionFrameCount;
+    }
+
+    if (targetPoint) {
+      if (lastAnchorCenter.current && currentAnchorCenter) {
+        const anchorDelta = currentAnchorCenter.clone().sub(lastAnchorCenter.current);
+        if (anchorDelta.lengthSq() > 0) {
+          camera.position.add(anchorDelta);
+          controls.target.add(anchorDelta);
+        }
+      }
+
+      controls.target.copy(currentSelectionCenter);
+
+      const toTargetPoint = targetPoint.clone().sub(currentSelectionCenter);
+      if (toTargetPoint.lengthSq() > 1e-8) {
+        if (!isUserInteracting.current) {
+          const currentOffset = camera.position.clone().sub(currentSelectionCenter);
+          const safeOffset = currentOffset.lengthSq() > 1e-8
+            ? currentOffset
+            : new THREE.Vector3(0, -MIN_OFFSET_DISTANCE_KM, 0);
+          const desiredDirection = toTargetPoint.normalize().multiplyScalar(-1);
+          const desiredOffset = desiredDirection.clone().multiplyScalar(Math.max(safeOffset.length(), MIN_OFFSET_DISTANCE_KM));
+          const nextOffset = lookTargetTransitionFrames.current > 0
+            ? rotateOffsetToward(safeOffset, desiredDirection, lookTargetRotationAlpha)
+            : desiredOffset;
+          camera.position.copy(currentSelectionCenter.clone().add(nextOffset));
+          if (lookTargetTransitionFrames.current > 0) {
+            lookTargetTransitionFrames.current -= 1;
+          }
+        }
+
+        syncControls();
+      } else {
+        syncControls();
+      }
+
+      lastAnchorCenter.current = currentAnchorCenter ? currentAnchorCenter.clone() : null;
+      return;
+    }
 
     if (animLockOffset.current && currentAnchorCenter) {
       const desiredPosition = currentAnchorCenter.clone().add(animLockOffset.current);
