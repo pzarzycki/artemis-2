@@ -5,9 +5,10 @@ import type { StarMapLayer, StarMapResolution } from '../config/starmaps';
 
 export type CameraTarget = 'overview' | 'earth' | 'moon' | 'spacecraft';
 export type CameraTargetSwitchMode = 'preset' | 'preserve-view';
+export type CameraPointTarget = 'none' | 'sun' | 'earth' | 'moon' | 'spacecraft';
 export type MissionMode = 'live' | 'scrub';
 export type ReferenceFrame = 'GCRS' | 'BCRS';
-export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'camera' | 'planning';
+export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'gravity' | 'camera' | 'planning';
 export type ActiveDialog = 'learn' | 'settings' | null;
 
 interface MissionState {
@@ -17,6 +18,7 @@ interface MissionState {
   isPlaying: boolean;
   cameraTarget: CameraTarget;
   cameraTargetSwitchMode: CameraTargetSwitchMode;
+  cameraPointTarget: CameraPointTarget;
   referenceFrame: ReferenceFrame;
   showStars: boolean;
   showObjectAxes: boolean;
@@ -41,6 +43,8 @@ interface MissionState {
   setPlaybackSpeed: (speed: number) => void;
   setIsPlaying: (playing: boolean) => void;
   setCameraTarget: (target: CameraTarget, options?: { preserveView?: boolean }) => void;
+  setCameraPointTarget: (target: CameraPointTarget) => void;
+  clearCameraPointTarget: () => void;
   consumeCameraTargetSwitchMode: () => void;
   setReferenceFrame: (frame: ReferenceFrame) => void;
   setShowStars: (show: boolean) => void;
@@ -67,6 +71,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   isPlaying: false,
   cameraTarget: 'overview',
   cameraTargetSwitchMode: 'preset',
+  cameraPointTarget: 'none',
   referenceFrame: 'GCRS',
   showStars: true,
   showObjectAxes: true,
@@ -100,6 +105,8 @@ export const useMissionStore = create<MissionState>((set) => ({
       cameraTarget,
       cameraTargetSwitchMode: options?.preserveView ? 'preserve-view' : 'preset',
     }),
+  setCameraPointTarget: (cameraPointTarget) => set({ cameraPointTarget }),
+  clearCameraPointTarget: () => set({ cameraPointTarget: 'none' }),
   consumeCameraTargetSwitchMode: () => set({ cameraTargetSwitchMode: 'preset' }),
   setReferenceFrame: (referenceFrame) => set({ referenceFrame }),
   setShowStars: (showStars) => set({ showStars }),
@@ -116,6 +123,7 @@ export const useMissionStore = create<MissionState>((set) => ({
     set({ cameraPosition, cameraForward, cameraUp }),
   requestCameraAim: (cameraAimDirection) =>
     set((state) => ({
+      cameraPointTarget: 'none',
       cameraAimDirection,
       cameraAimRequestId: state.cameraAimRequestId + 1,
     })),

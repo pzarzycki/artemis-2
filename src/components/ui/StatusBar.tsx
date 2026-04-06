@@ -25,8 +25,16 @@ function XIcon() {
 
 function GitHubIcon() {
   return (
-    <svg viewBox="0 0 24 24" className={styles.actionIcon} aria-hidden="true">
+    <svg viewBox="0 0 24 24" className={`${styles.actionIcon} ${styles.githubIcon}`} aria-hidden="true">
       <path d="M9.1 18.6c-3 .9-3-1.5-4.2-1.8m8.4 3.6v-2.4c0-.7 0-1.3-.3-1.8 2.8-.3 5.8-1.4 5.8-6.3 0-1.4-.5-2.5-1.3-3.4.1-.3.6-1.6-.1-3.3 0 0-1.1-.3-3.6 1.3a12 12 0 0 0-6.6 0C4.7 2.9 3.6 3.2 3.6 3.2c-.7 1.7-.2 3-.1 3.3A4.9 4.9 0 0 0 2.2 10c0 4.9 3 6 5.8 6.3-.2.5-.3 1-.3 1.8v2.4" />
+    </svg>
+  );
+}
+
+function StarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className={`${styles.actionIcon} ${styles.starIcon}`} aria-hidden="true">
+      <path d="m12 3.8 2.5 5.1 5.6.8-4 3.9.9 5.5-5-2.6-5 2.6.9-5.5-4-3.9 5.6-.8L12 3.8Z" />
     </svg>
   );
 }
@@ -90,6 +98,7 @@ export default function StatusBar() {
           )}
         </div>
         <div className={styles.status}>
+
           <button
             type="button"
             className={`${styles.learnBtn} ${styles.tooltipButton}`}
@@ -108,7 +117,7 @@ export default function StatusBar() {
           >
             <span>Settings</span>
           </button>
-          <div className={styles.externalGroup}>
+
             <button
               type="button"
               className={`${styles.actionBtn} ${styles.youtubeBtn} ${styles.tooltipButton}`}
@@ -117,6 +126,20 @@ export default function StatusBar() {
               data-tooltip="Watch NASA's Artemis II Live Mission Coverage"
             >
               <YouTubeIcon />
+            </button>
+            
+
+
+          <div className={styles.externalGroup}>
+            <button
+              type="button"
+              className={`${styles.learnBtn} ${styles.githubCta} ${styles.tooltipButton}`}
+              data-tooltip="Open source on GitHub"
+              onClick={() => openExternal(projectConfig.sourceUrl)}
+              aria-label="Open source on GitHub"
+            >
+              <StarIcon />
+              <span>Project GitHub</span>
             </button>
           </div>
           <div className={styles.shareGroup}>
@@ -138,15 +161,7 @@ export default function StatusBar() {
             >
               <XIcon />
             </button>
-            <button
-              type="button"
-              className={`${styles.actionBtn} ${styles.shareBtn} ${styles.tooltipButton}`}
-              onClick={() => openExternal(projectConfig.sourceUrl)}
-              aria-label="Open source code"
-              data-tooltip="See source on GitHub"
-            >
-              <GitHubIcon />
-            </button>
+
           </div>
         </div>
       </div>

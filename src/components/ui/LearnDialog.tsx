@@ -356,6 +356,162 @@ Useful short descriptions for the current app:
 `,
   },
   {
+    id: 'gravity',
+    label: 'Gravity',
+    summary: 'How the field colors, arrows, and neutral boundary are defined.',
+    content: String.raw`
+The gravity overlay answers three different questions at once:
+
+- **Which body is stronger here?**
+- **How strong is the combined field?**
+- **Which way would an object accelerate?**
+
+Those are related, but they are not the same quantity.
+
+## 1. The two-body gravity vector
+
+At any point in the slice, the app computes one acceleration vector from Earth and one from Moon.
+
+For a body with standard gravitational parameter $\mu = GM$ and distance $r$ from the sample point, the acceleration magnitude is:
+
+$$
+a = \frac{\mu}{r^2}
+$$
+
+Here $\mu$ is the body's **standard gravitational parameter**:
+
+$$
+\mu = GM
+$$
+
+where $G$ is the gravitational constant and $M$ is the body's mass.
+
+So in this section:
+
+- $\mu_E$ means Earth's standard gravitational parameter
+- $\mu_M$ means Moon's standard gravitational parameter
+- $r_E$ means distance from the sample point to Earth
+- $r_M$ means distance from the sample point to Moon
+
+In the codebase these appear as the constants \`GM_EARTH\` and \`GM_MOON\`.
+
+The direction always points **toward** the body.
+
+So the app forms:
+
+$$
+\mathbf{a}_{Earth} = \frac{\mu_E}{r_E^2}\,\hat{u}_{Earth}
+$$
+
+$$
+\mathbf{a}_{Moon} = \frac{\mu_M}{r_M^2}\,\hat{u}_{Moon}
+$$
+
+and then adds them:
+
+$$
+\mathbf{a}_{net} = \mathbf{a}_{Earth} + \mathbf{a}_{Moon}
+$$
+
+That summed vector is the physically meaningful local gravity field in this simplified two-body model.
+
+## 2. What the fill colors mean
+
+The disk hue does **not** come from distance-to-Moon and does **not** come from the direction of the summed vector. It comes from a comparison of the individual gravity magnitudes:
+
+$$
+a_E = \frac{\mu_E}{r_E^2}, \qquad a_M = \frac{\mu_M}{r_M^2}
+$$
+
+- **Orange** means $a_E > a_M$
+- **Blue** means $a_M > a_E$
+
+So the color answers:
+
+> Which body's gravity is stronger at this point?
+
+That is why the Moon-dominant patch looks rounded. The equal-influence boundary is the locus where:
+
+$$
+\frac{\mu_M}{r_M^2} = \frac{\mu_E}{r_E^2}
+$$
+
+Rearranging gives:
+
+$$
+\frac{r_E}{r_M} = \sqrt{\frac{\mu_E}{\mu_M}}
+$$
+
+That means the boundary is the set of all points whose distances to Earth and Moon stay in one fixed ratio. In geometry, that locus is an **Apollonius sphere** in 3D.
+
+So the rounded blue region is not a bug by itself. It is the expected shape of the equal-influence boundary for two inverse-square point-mass fields. When you cut that sphere with the current gravity plane, the visible boundary becomes a circle or rounded arc.
+
+## 3. What brightness means
+
+Brightness is based on the magnitude of the **summed** gravity vector:
+
+$$
+\left|\mathbf{a}_{net}\right| = \left|\mathbf{a}_{Earth} + \mathbf{a}_{Moon}\right|
+$$
+
+This is important because a point can still be bright even where Earth and Moon are competing strongly. Brightness is about how strong the combined field is, not just which body wins the comparison.
+
+The shader compresses that magnitude into a display-friendly range so near-Earth values do not completely wash out the rest of the slice.
+
+## 4. What the arrows mean
+
+The arrow overlay uses the direction of the summed field vector:
+
+$$
+\hat{d} = \frac{\mathbf{a}_{net}}{\left|\mathbf{a}_{net}\right|}
+$$
+
+So each arrow shows the direction a test particle would accelerate **at that location** in the two-body Earth-Moon field.
+
+The arrows are sampled sparsely on the current slice plane so they stay readable. They are hidden near Earth and Moon where the field changes very rapidly and would otherwise become visually noisy.
+
+## 5. Why the boundary is not the same as the neutral point
+
+There are two different ideas that are easy to mix up:
+
+1. **Equal influence**: $a_E = a_M$
+2. **Zero Earth-Moon-axis projection of the net field**
+
+For the static two-body comparison used by this overlay, the equal-influence point along the Earth-Moon line is:
+
+$$
+r = d\,\frac{\sqrt{\mu_E / \mu_M}}{1 + \sqrt{\mu_E / \mu_M}}
+$$
+
+where $d$ is the Earth-Moon distance.
+
+This is **not** the same as the true $L_1$ point from the rotating restricted three-body problem, because $L_1$ also includes the centrifugal term in the rotating frame.
+
+## 6. What this overlay is and is not
+
+This gravity display is a useful educational map, but it is still a simplified model.
+
+Included:
+
+- Earth gravity
+- Moon gravity
+- full vector addition of those two fields
+
+Not included:
+
+- centrifugal or Coriolis terms from a rotating co-moving frame
+- Sun gravity
+- non-spherical gravity harmonics
+- relativistic frame effects
+
+So the overlay is best read as:
+
+> a two-body Newtonian gravity slice through the Earth-Moon system
+
+That is enough to explain why the field bends, why the arrows tilt, and why the stronger-body boundary surrounds the Moon as a rounded region instead of forming a straight divider.
+`,
+  },
+  {
     id: 'camera',
     label: 'Camera',
     summary: 'Locking, pointing, and telemetry readout.',
@@ -454,9 +610,14 @@ Those readouts let you compare the rendered scene with the frame and orientation
 export default function LearnDialog({ onClose }: LearnDialogProps) {
   const activeTab = useMissionStore((s) => s.learnSection);
   const setLearnSection = useMissionStore((s) => s.setLearnSection);
+  const orderedSections = useMemo(() => {
+    const gravitySection = SECTIONS.find((section) => section.id === 'gravity');
+    const otherSections = SECTIONS.filter((section) => section.id !== 'gravity');
+    return gravitySection ? [...otherSections, gravitySection] : [...SECTIONS];
+  }, []);
   const activeSection = useMemo(
-    () => SECTIONS.find((section) => section.id === activeTab) ?? SECTIONS[0],
-    [activeTab],
+    () => orderedSections.find((section) => section.id === activeTab) ?? orderedSections[0],
+    [activeTab, orderedSections],
   );
 
   return (
@@ -471,7 +632,7 @@ export default function LearnDialog({ onClose }: LearnDialogProps) {
         <div className={styles.header}>
           <div className={styles.headerText}>
             <div className={styles.title}>Learn</div>
-            <div className={styles.text}>Frames, handedness, camera axes, and where the astronomy data comes from.</div>
+            <div className={styles.text}>Frames, gravity, camera axes, and where the astronomy data comes from.</div>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close Learn dialog">
             <svg viewBox="0 0 24 24" className={styles.closeIcon} aria-hidden="true">
@@ -482,7 +643,7 @@ export default function LearnDialog({ onClose }: LearnDialogProps) {
 
         <div className={styles.body}>
           <div className={styles.tabs} role="tablist" aria-label="Learn sections">
-            {SECTIONS.map((section) => {
+            {orderedSections.map((section) => {
               const selected = section.id === activeSection.id;
               return (
                 <button

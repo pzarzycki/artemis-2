@@ -53,6 +53,7 @@ function CameraTelemetry() {
 export default function Scene() {
   const cameraTarget = useMissionStore((s) => s.cameraTarget);
   const cameraTargetSwitchMode = useMissionStore((s) => s.cameraTargetSwitchMode);
+  const cameraPointTarget = useMissionStore((s) => s.cameraPointTarget);
   const consumeCameraTargetSwitchMode = useMissionStore((s) => s.consumeCameraTargetSwitchMode);
   const showStars = useMissionStore((s) => s.showStars);
   const showObjectAxes = useMissionStore((s) => s.showObjectAxes);
@@ -111,7 +112,9 @@ export default function Scene() {
         <CameraRig
           target={cameraTarget}
           targetSwitchMode={cameraTargetSwitchMode}
+          pointTarget={cameraPointTarget}
           referenceFrame={scene.referenceFrame}
+          sunWorld={scene.sunWorld}
           earthWorld={scene.earthWorld}
           moonWorld={scene.moonWorld}
           spacecraftWorld={scene.spacecraftWorld}

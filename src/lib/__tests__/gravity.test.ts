@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   classifyGravityInfluence,
   computeGravityMagnitude,
+  computeNetGravityVector,
   computeGravityProjection,
   computeNeutralRadius,
   computeGravityFieldMagnitudeScale,
@@ -96,6 +97,23 @@ describe('computeGravityMagnitude', () => {
     const magnitude = computeGravityMagnitude(pos, [MOON_DIST, 0, 0]);
     const projection = Math.abs(computeGravityProjection(pos, [MOON_DIST, 0, 0]));
     expect(magnitude).toBeGreaterThan(projection);
+  });
+});
+
+describe('computeNetGravityVector', () => {
+  it('points toward Earth for Earth-dominant points on the axis', () => {
+    const [gx] = computeNetGravityVector([100_000, 0, 0], [MOON_DIST, 0, 0]);
+    expect(gx).toBeLessThan(0);
+  });
+
+  it('points toward Moon for Moon-dominant points near the Moon', () => {
+    const [gx] = computeNetGravityVector([MOON_DIST - 5_000, 0, 0], [MOON_DIST, 0, 0]);
+    expect(gx).toBeGreaterThan(0);
+  });
+
+  it('stays in the same plane as Earth, Moon, and the sample point', () => {
+    const vector = computeNetGravityVector([180_000, 40_000, 0], [MOON_DIST, 0, 0]);
+    expect(vector[2]).toBeCloseTo(0, 12);
   });
 });
 

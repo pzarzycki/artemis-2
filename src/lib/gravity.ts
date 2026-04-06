@@ -8,7 +8,7 @@ export const MOON_RADIUS_KM = 1737.4;
 
 type Vec3 = [number, number, number];
 
-function computeGravityVector(posKm: Vec3, moonPosKm: Vec3): Vec3 {
+export function computeNetGravityVector(posKm: Vec3, moonPosKm: Vec3): Vec3 {
   const [px, py, pz] = posKm;
   const [mx, my, mz] = moonPosKm;
 
@@ -67,7 +67,7 @@ export function computeGravityProjection(
   posKm: Vec3,
   moonPosKm: Vec3,
 ): number {
-  const [gx, gy, gz] = computeGravityVector(posKm, moonPosKm);
+  const [gx, gy, gz] = computeNetGravityVector(posKm, moonPosKm);
   const [mx, my, mz] = moonPosKm;
 
   const moonDist = Math.sqrt(mx * mx + my * my + mz * mz);
@@ -81,7 +81,7 @@ export function computeGravityProjection(
  * at a point in Earth-centred coordinates.
  */
 export function computeGravityMagnitude(posKm: Vec3, moonPosKm: Vec3): number {
-  const [gx, gy, gz] = computeGravityVector(posKm, moonPosKm);
+  const [gx, gy, gz] = computeNetGravityVector(posKm, moonPosKm);
   return Math.sqrt(gx * gx + gy * gy + gz * gz);
 }
 

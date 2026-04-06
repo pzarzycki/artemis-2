@@ -34,6 +34,7 @@
 .learnBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 5px 12px;
   border: 1px solid var(--border);
@@ -43,6 +44,19 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-primary);
+}
+
+.githubCta {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #e2e7ed;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+  color: #12161d;
+}
+
+.githubCta:hover,
+.githubCta:focus-visible {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: #d8dee6;
 }
 
 .timeItem {
@@ -111,6 +125,30 @@
   color: #d7e7ff;
 }
 
+.githubBtn {
+  position: relative;
+  border-color: rgba(255, 244, 170, 0.34);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 244, 170, 0.22), transparent 58%),
+    linear-gradient(180deg, rgba(50, 63, 92, 0.92), rgba(18, 24, 40, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 244, 170, 0.08),
+    0 0 0 1px rgba(255, 244, 170, 0.05);
+  color: #fff7c8;
+}
+
+.githubBtn::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffe173;
+  box-shadow: 0 0 8px rgba(255, 225, 115, 0.75);
+}
+
 .youtubeBtn {
   border-color: rgba(255, 84, 84, 0.32);
   background: rgba(255, 84, 84, 0.12);
@@ -129,6 +167,23 @@
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.githubIcon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.95;
+  filter: drop-shadow(0 0 6px rgba(255, 232, 143, 0.22));
+}
+
+.starIcon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+  color: #12161d;
+  fill: currentColor;
+  stroke: none;
+  filter: none;
 }
 
 .tooltipButton {
@@ -162,6 +217,13 @@
 .tooltipButton:focus-visible::after {
   opacity: 1;
   transform: translateY(0);
+}
+
+.githubCta.tooltipButton::after,
+.githubBtn.tooltipButton::after {
+  min-width: max-content;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .liveBadge {

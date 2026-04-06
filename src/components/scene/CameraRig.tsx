@@ -3,7 +3,7 @@ import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
-import type { CameraTarget, CameraTargetSwitchMode, ReferenceFrame } from '../../store/missionStore';
+import type { CameraPointTarget, CameraTarget, CameraTargetSwitchMode, ReferenceFrame } from '../../store/missionStore';
 import { useMissionStore } from '../../store/missionStore';
 import type { Vec3 } from '../../lib/coordinates/types';
 import { MOON_RADIUS_KM } from '../../lib/ephemeris/constants';
@@ -11,7 +11,9 @@ import { MOON_RADIUS_KM } from '../../lib/ephemeris/constants';
 interface CameraRigProps {
   target: CameraTarget;
   targetSwitchMode: CameraTargetSwitchMode;
+  pointTarget: CameraPointTarget;
   referenceFrame: ReferenceFrame;
+  sunWorld: Vec3;
   earthWorld: Vec3;
   moonWorld: Vec3;
   spacecraftWorld: Vec3 | null;

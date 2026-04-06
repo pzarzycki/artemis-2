@@ -10,7 +10,7 @@ const PRESETS: { id: CameraTarget; label: string; icon: string }[] = [
 ];
 
 export default function CameraPresets() {
-  const { cameraTarget, setCameraTarget } = useMissionStore();
+  const { cameraTarget, setCameraTarget, clearCameraPointTarget } = useMissionStore();
 
   return (
     <div className={`${styles.group} hud-panel`}>
@@ -18,7 +18,10 @@ export default function CameraPresets() {
         <button
           key={id}
           className={`${styles.btn} ${cameraTarget === id ? styles.active : ''}`}
-          onClick={(event) => setCameraTarget(id, { preserveView: event.shiftKey })}
+          onClick={(event) => {
+            clearCameraPointTarget();
+            setCameraTarget(id, { preserveView: event.shiftKey });
+          }}
           title={`${label}${cameraTarget === id ? '' : ' (Shift+click: keep current view)'}`}
         >
           <span className={styles.icon}>{icon}</span>
