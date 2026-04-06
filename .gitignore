@@ -13,7 +13,6 @@ dist-ssr
 *.local
 
 # Generated runtime assets
-public/starmaps/
 cache/
 
 # Python / uv

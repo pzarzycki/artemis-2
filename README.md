@@ -49,25 +49,25 @@ For local development, the app runs at:
 
 ## Large Asset Policy
 
-Large star-map EXR files are **not** kept in git.
+Large star-map EXR files are kept in Git LFS.
 
-- local cache directory: [`public/starmaps/`](./public/starmaps/)
+- asset directory: [`public/starmaps/`](./public/starmaps/)
 - supported resolutions: `4k`, `8k`, `16k`
 - default runtime selection: `4k`
 
-For local development, download the required sky maps with:
+After cloning, fetch the required sky maps with Git LFS:
 
 ```bash
-uv run python scripts/download_starmaps.py
+git lfs pull
 ```
 
-To download only one resolution:
+To refresh or regenerate the local star-map set manually, use:
 
 ```bash
 uv run python scripts/download_starmaps.py 4k
 ```
 
-The Docker build performs the same download step during image build, so the runtime image remains self-contained even though the EXRs are not tracked in the repository.
+GitHub Actions checks out the same LFS assets before the Docker build, so image builds do not depend on downloading these files from NASA during CI.
 
 ## Scale and Design Goals
 
