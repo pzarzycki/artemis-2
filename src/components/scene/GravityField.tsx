@@ -131,22 +131,14 @@ export default function GravityField({ earthPos, moonPos }: GravityFieldProps) {
 
     const earthMoonDir = moonRel.clone().normalize();
 
-    // Disk normal is perpendicular to the Earth-Moon axis and ECI-Z.
-    // This orients the disk so it contains:
-    //   (a) Earth centre   (b) the Moon   (c) the ECI-Z direction component
-    const zAxis = new THREE.Vector3(0, 0, 1);
-    const cross = new THREE.Vector3().crossVectors(earthMoonDir, zAxis);
-    const diskNormal =
-      cross.length() < 0.01
-        ? new THREE.Vector3().crossVectors(earthMoonDir, new THREE.Vector3(0, 1, 0)).normalize()
-        : cross.normalize();
-
-    // Rotate group so local +Z maps to the computed disk normal
-    const defaultNormal = new THREE.Vector3(0, 0, 1);
-    groupRef.current.quaternion.setFromUnitVectors(defaultNormal, diskNormal);
+    // Disk lies in the equatorial (XY) plane, centred on Earth.
+    // CircleGeometry is already in the XY plane (normal = +Z), so no rotation
+    // is needed.  This makes the disk visible face-on from the default overview
+    // camera (which looks down the ECI-Z axis) and roughly contains both Earth
+    // and the Moon, whose orbit is only ~5° from the equatorial plane.
     groupRef.current.position.copy(ep);
 
-    // Update shader uniforms
+    // Update shader uniforms every frame so the field reacts to body motion
     material.uniforms.uEarthPos.value.copy(ep);
     material.uniforms.uMoonPos.value.copy(mp);
     material.uniforms.uEarthMoonDir.value.copy(earthMoonDir);
