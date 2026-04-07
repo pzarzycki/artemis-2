@@ -82,9 +82,10 @@ function CameraTelemetry() {
   const camera = useThree((state) => state.camera);
   const forwardRef = useRef(new THREE.Vector3());
   const upRef = useRef(new THREE.Vector3());
-  const lastPositionRef = useRef(new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN));
-  const lastForwardRef = useRef(new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN));
-  const lastUpRef = useRef(new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN));
+  const lastPositionRef = useRef(new THREE.Vector3());
+  const lastForwardRef = useRef(new THREE.Vector3());
+  const lastUpRef = useRef(new THREE.Vector3());
+  const hasPublishedRef = useRef(false);
   const elapsedRef = useRef(0);
 
   useFrame((_, delta) => {
@@ -93,19 +94,21 @@ function CameraTelemetry() {
     const lastPosition = lastPositionRef.current;
     const lastForward = lastForwardRef.current;
     const lastUp = lastUpRef.current;
+    const hasPublished = hasPublishedRef.current;
 
     camera.getWorldDirection(forward);
     up.copy(camera.up).applyQuaternion(camera.quaternion).normalize();
 
-    const positionChanged = lastPosition.distanceToSquared(camera.position) > 1e-6;
-    const forwardChanged = lastForward.distanceToSquared(forward) > 1e-8;
-    const upChanged = lastUp.distanceToSquared(up) > 1e-8;
+    const positionChanged = !hasPublished || lastPosition.distanceToSquared(camera.position) > 1e-6;
+    const forwardChanged = !hasPublished || lastForward.distanceToSquared(forward) > 1e-8;
+    const upChanged = !hasPublished || lastUp.distanceToSquared(up) > 1e-8;
 
     elapsedRef.current += delta;
     if (!positionChanged && !forwardChanged && !upChanged) return;
-    if (elapsedRef.current < 0.2) return;
+    if (hasPublished && elapsedRef.current < 0.2) return;
 
     elapsedRef.current = 0;
+    hasPublishedRef.current = true;
     lastPosition.copy(camera.position);
     lastForward.copy(forward);
     lastUp.copy(up);
