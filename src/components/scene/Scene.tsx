@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas, useThree, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { Html } from '@react-three/drei';
@@ -80,11 +80,36 @@ function DebugOverlay() {
 
 function CameraTelemetry() {
   const camera = useThree((state) => state.camera);
+  const forwardRef = useRef(new THREE.Vector3());
+  const upRef = useRef(new THREE.Vector3());
+  const lastPositionRef = useRef(new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN));
+  const lastForwardRef = useRef(new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN));
+  const lastUpRef = useRef(new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN));
+  const elapsedRef = useRef(0);
 
-  useFrame(() => {
-    const forward = new THREE.Vector3();
-    const up = camera.up.clone().applyQuaternion(camera.quaternion).normalize();
+  useFrame((_, delta) => {
+    const forward = forwardRef.current;
+    const up = upRef.current;
+    const lastPosition = lastPositionRef.current;
+    const lastForward = lastForwardRef.current;
+    const lastUp = lastUpRef.current;
+
     camera.getWorldDirection(forward);
+    up.copy(camera.up).applyQuaternion(camera.quaternion).normalize();
+
+    const positionChanged = lastPosition.distanceToSquared(camera.position) > 1e-6;
+    const forwardChanged = lastForward.distanceToSquared(forward) > 1e-8;
+    const upChanged = lastUp.distanceToSquared(up) > 1e-8;
+
+    elapsedRef.current += delta;
+    if (!positionChanged && !forwardChanged && !upChanged) return;
+    if (elapsedRef.current < 0.2) return;
+
+    elapsedRef.current = 0;
+    lastPosition.copy(camera.position);
+    lastForward.copy(forward);
+    lastUp.copy(up);
+
     useMissionStore.getState().setCameraTelemetry(
       [camera.position.x, camera.position.y, camera.position.z],
       [forward.x, forward.y, forward.z],
