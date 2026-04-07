@@ -1,3 +1,4 @@
+import type { ThreeEvent } from '@react-three/fiber';
 import { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
@@ -10,9 +11,19 @@ interface MoonProps {
   position: Vec3;
   orientation: [number, number, number]; // [poleRA_deg, poleDec_deg, W_deg]
   showAxes: boolean;
+  onPointerOver?: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerMove?: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerOut?: (event: ThreeEvent<PointerEvent>) => void;
 }
 
-export default function Moon({ position, orientation, showAxes }: MoonProps) {
+export default function Moon({
+  position,
+  orientation,
+  showAxes,
+  onPointerOver,
+  onPointerMove,
+  onPointerOut,
+}: MoonProps) {
   const [albedoMap, normalMap] = useLoader(TextureLoader, [
     assetUrl('assets/textures/moon_8k.jpg'),
     assetUrl('assets/textures/moon_normal_8k.jpg'),
@@ -36,6 +47,10 @@ export default function Moon({ position, orientation, showAxes }: MoonProps) {
           roughness={0.95}
           metalness={0.0}
         />
+      </mesh>
+      <mesh onPointerOver={onPointerOver} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <sphereGeometry args={[2800, 48, 24]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <LocalAxes size={2600} visible={showAxes} />
     </group>

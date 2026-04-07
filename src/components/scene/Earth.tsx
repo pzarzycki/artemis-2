@@ -1,3 +1,4 @@
+import type { ThreeEvent } from '@react-three/fiber';
 import { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader } from 'three';
@@ -9,9 +10,19 @@ interface EarthProps {
   position: [number, number, number];
   gmstRad: number;
   showAxes: boolean;
+  onPointerOver?: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerMove?: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerOut?: (event: ThreeEvent<PointerEvent>) => void;
 }
 
-export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
+export default function Earth({
+  position,
+  gmstRad,
+  showAxes,
+  onPointerOver,
+  onPointerMove,
+  onPointerOut,
+}: EarthProps) {
   const [dayMap, nightMap, normalMap, specMap, cloudsMap] = useLoader(TextureLoader, [
     assetUrl('assets/textures/earth_day_8k.jpg'),
     assetUrl('assets/textures/earth_night_8k.jpg'),
@@ -53,6 +64,11 @@ export default function Earth({ position, gmstRad, showAxes }: EarthProps) {
           depthTest={true}
           side={THREE.FrontSide}
         />
+      </mesh>
+
+      <mesh onPointerOver={onPointerOver} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+        <sphereGeometry args={[9000, 48, 24]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
 
       <LocalAxes size={9000} visible={showAxes} />

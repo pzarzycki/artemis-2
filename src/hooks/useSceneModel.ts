@@ -13,9 +13,19 @@ export interface SceneModel {
   earthWorld: Vec3;
   moonWorld: Vec3;
   sunWorld: Vec3;
+  mercuryWorld: Vec3;
+  venusWorld: Vec3;
+  marsWorld: Vec3;
+  jupiterWorld: Vec3;
+  saturnWorld: Vec3;
   spacecraftWorld: Vec3 | null;
   moonPosECI: Vec3;
   sunPosECI: Vec3;
+  mercuryPosECI: Vec3;
+  venusPosECI: Vec3;
+  marsPosECI: Vec3;
+  jupiterPosECI: Vec3;
+  saturnPosECI: Vec3;
   earthPosBCRS: Vec3 | null;
   spacecraftPosECI: Vec3 | null;
   spacecraftVelECI: Vec3 | null;
@@ -29,6 +39,15 @@ function getEarthWorld(referenceFrame: ReferenceFrame, earthPosBCRS: Vec3 | null
   return [0, 0, 0];
 }
 
+export function getBodyWorldPosition(
+  referenceFrame: ReferenceFrame,
+  earthPosBCRS: Vec3 | null,
+  bodyPosECI: Vec3,
+): Vec3 {
+  if (referenceFrame === 'BCRS' && earthPosBCRS) return add(earthPosBCRS, bodyPosECI);
+  return bodyPosECI;
+}
+
 export function useSceneModel(): SceneModel {
   const referenceFrame = useMissionStore((s) => s.referenceFrame);
   const { julianDate } = useMissionTime();
@@ -37,16 +56,15 @@ export function useSceneModel(): SceneModel {
 
   return useMemo(() => {
     const earthWorld = getEarthWorld(referenceFrame, ephemeris.earthPosBCRS);
-    const moonWorld = referenceFrame === 'BCRS' && ephemeris.earthPosBCRS
-      ? add(ephemeris.earthPosBCRS, ephemeris.moonPosECI)
-      : ephemeris.moonPosECI;
-    const sunWorld = referenceFrame === 'BCRS' && ephemeris.earthPosBCRS
-      ? add(ephemeris.earthPosBCRS, ephemeris.sunPosECI)
-      : ephemeris.sunPosECI;
+    const moonWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.moonPosECI);
+    const sunWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.sunPosECI);
+    const mercuryWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.mercuryPosECI);
+    const venusWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.venusPosECI);
+    const marsWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.marsPosECI);
+    const jupiterWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.jupiterPosECI);
+    const saturnWorld = getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, ephemeris.saturnPosECI);
     const spacecraftWorld = spacecraftState
-      ? (referenceFrame === 'BCRS' && ephemeris.earthPosBCRS
-        ? add(ephemeris.earthPosBCRS, spacecraftState.posECI)
-        : spacecraftState.posECI)
+      ? getBodyWorldPosition(referenceFrame, ephemeris.earthPosBCRS, spacecraftState.posECI)
       : null;
 
     return {
@@ -55,9 +73,19 @@ export function useSceneModel(): SceneModel {
       earthWorld,
       moonWorld,
       sunWorld,
+      mercuryWorld,
+      venusWorld,
+      marsWorld,
+      jupiterWorld,
+      saturnWorld,
       spacecraftWorld,
       moonPosECI: ephemeris.moonPosECI,
       sunPosECI: ephemeris.sunPosECI,
+      mercuryPosECI: ephemeris.mercuryPosECI,
+      venusPosECI: ephemeris.venusPosECI,
+      marsPosECI: ephemeris.marsPosECI,
+      jupiterPosECI: ephemeris.jupiterPosECI,
+      saturnPosECI: ephemeris.saturnPosECI,
       earthPosBCRS: ephemeris.earthPosBCRS,
       spacecraftPosECI: spacecraftState?.posECI ?? null,
       spacecraftVelECI: spacecraftState?.velECI ?? null,

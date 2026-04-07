@@ -1,3 +1,4 @@
+import type { ThreeEvent } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
 import type { Vec3 } from '../../lib/coordinates/types';
@@ -5,9 +6,12 @@ import { normalize } from '../../lib/coordinates/transforms';
 
 interface SunProps {
   position: Vec3;
+  onPointerOver?: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerMove?: (event: ThreeEvent<PointerEvent>) => void;
+  onPointerOut?: (event: ThreeEvent<PointerEvent>) => void;
 }
 
-export default function Sun({ position }: SunProps) {
+export default function Sun({ position, onPointerOver, onPointerMove, onPointerOut }: SunProps) {
   const lightRef = useRef<THREE.DirectionalLight>(null!);
   const sphereRef = useRef<THREE.Mesh>(null!);
 
@@ -31,15 +35,21 @@ export default function Sun({ position }: SunProps) {
         castShadow={false}
       />
       {/* Visual Sun sphere — marked as emissive for bloom */}
-      <mesh ref={sphereRef} position={sunVisualPos}>
-        <sphereGeometry args={[300_000, 16, 8]} />
-        <meshStandardMaterial
-          color={0xfffbe0}
-          emissive={0xffee88}
-          emissiveIntensity={4}
-          toneMapped={false}
-        />
-      </mesh>
+      <group position={sunVisualPos}>
+        <mesh ref={sphereRef}>
+          <sphereGeometry args={[300_000, 16, 8]} />
+          <meshStandardMaterial
+            color={0xfffbe0}
+            emissive={0xffee88}
+            emissiveIntensity={4}
+            toneMapped={false}
+          />
+        </mesh>
+        <mesh onPointerOver={onPointerOver} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
+          <sphereGeometry args={[520_000, 16, 8]} />
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+        </mesh>
+      </group>
     </>
   );
 }

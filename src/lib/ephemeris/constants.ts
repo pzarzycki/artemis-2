@@ -12,6 +12,21 @@ export const AU_KM = 149_597_870.7;
 /** Sun radius in km */
 export const SUN_RADIUS_KM = 695_700;
 
+/** Mercury radius in km */
+export const MERCURY_RADIUS_KM = 2_439.7;
+
+/** Venus radius in km */
+export const VENUS_RADIUS_KM = 6_051.8;
+
+/** Mars radius in km */
+export const MARS_RADIUS_KM = 3_389.5;
+
+/** Jupiter equatorial radius in km */
+export const JUPITER_RADIUS_KM = 71_492;
+
+/** Saturn equatorial radius in km */
+export const SATURN_RADIUS_KM = 60_268;
+
 /** Earth gravitational parameter (km³/s²) */
 export const EARTH_GM = 398_600.4418;
 

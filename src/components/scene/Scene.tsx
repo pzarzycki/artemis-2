@@ -1,11 +1,13 @@
-import { Suspense, useEffect } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Canvas, useThree, useFrame, type ThreeEvent } from '@react-three/fiber';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { Html } from '@react-three/drei';
 import { KernelSize } from 'postprocessing';
 import * as THREE from 'three';
 import Earth from './Earth';
 import Moon from './Moon';
 import Sun from './Sun';
+import Planet from './Planet';
 import Spacecraft from './Spacecraft';
 import Trajectory from './Trajectory';
 import CameraRig from './CameraRig';
@@ -14,6 +16,49 @@ import CelestialBackground from './CelestialBackground';
 import GravityField from './GravityField';
 import { useMissionStore } from '../../store/missionStore';
 import { useSceneModel } from '../../hooks/useSceneModel';
+import {
+  JUPITER_RADIUS_KM,
+  MARS_RADIUS_KM,
+  MERCURY_RADIUS_KM,
+  SATURN_RADIUS_KM,
+  VENUS_RADIUS_KM,
+} from '../../lib/ephemeris/constants';
+
+interface HoverTipState {
+  name: string;
+  x: number;
+  y: number;
+}
+
+function HoverTip({ tip }: { tip: HoverTipState | null }) {
+  if (!tip) return null;
+
+  return (
+    <Html fullscreen zIndexRange={[20, 0]}>
+      <div
+        style={{
+          position: 'absolute',
+          left: `${tip.x + 14}px`,
+          top: `${tip.y + 14}px`,
+          transform: 'translate3d(0, 0, 0)',
+          pointerEvents: 'none',
+          padding: '6px 10px',
+          borderRadius: '999px',
+          border: '1px solid rgba(190, 208, 255, 0.35)',
+          background: 'rgba(6, 10, 22, 0.86)',
+          color: '#eef4ff',
+          fontSize: '12px',
+          fontFamily: '"SF Mono", "Roboto Mono", monospace',
+          letterSpacing: '0.04em',
+          whiteSpace: 'nowrap',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+        }}
+      >
+        {tip.name}
+      </div>
+    </Html>
+  );
+}
 
 function DebugOverlay() {
   const { gl } = useThree();
@@ -62,6 +107,22 @@ export default function Scene() {
   const ambientLightIntensity = useMissionStore((s) => s.ambientLightIntensity);
   const bloomIntensity = useMissionStore((s) => s.bloomIntensity);
   const scene = useSceneModel();
+  const [hoverTip, setHoverTip] = useState<HoverTipState | null>(null);
+
+  const makeHoverHandlers = useCallback((name: string) => ({
+    onPointerOver: (event: ThreeEvent<PointerEvent>) => {
+      event.stopPropagation();
+      setHoverTip({ name, x: event.clientX, y: event.clientY });
+    },
+    onPointerMove: (event: ThreeEvent<PointerEvent>) => {
+      event.stopPropagation();
+      setHoverTip({ name, x: event.clientX, y: event.clientY });
+    },
+    onPointerOut: (event: ThreeEvent<PointerEvent>) => {
+      event.stopPropagation();
+      setHoverTip((current) => (current?.name === name ? null : current));
+    },
+  }), []);
 
   return (
     <Canvas
@@ -79,9 +140,84 @@ export default function Scene() {
       <Suspense fallback={null}>
         {showStars && <CelestialBackground />}
         <ambientLight intensity={ambientLightIntensity} />
-        <Sun position={scene.sunWorld} />
-        <Earth position={scene.earthWorld} gmstRad={scene.gmstRad} showAxes={showObjectAxes} />
+        <Sun position={scene.sunWorld} {...makeHoverHandlers('Sun')} />
+        <Planet
+          {...makeHoverHandlers('Mercury')}
+          position={scene.mercuryWorld}
+          radiusKm={MERCURY_RADIUS_KM}
+          visualRadiusKm={95_000}
+          color={0xa8a7a3}
+          emissive={0x8b7860}
+          emissiveIntensity={0.28}
+          roughness={0.88}
+          glowColor={0x9f8d72}
+          glowOpacity={0.14}
+        />
+        <Planet
+          {...makeHoverHandlers('Venus')}
+          position={scene.venusWorld}
+          radiusKm={VENUS_RADIUS_KM}
+          visualRadiusKm={150_000}
+          color={0xd7b072}
+          emissive={0xb27d2f}
+          emissiveIntensity={0.34}
+          roughness={0.84}
+          glowColor={0xe0b66f}
+          glowOpacity={0.18}
+        />
+        <Planet
+          {...makeHoverHandlers('Mars')}
+          position={scene.marsWorld}
+          radiusKm={MARS_RADIUS_KM}
+          visualRadiusKm={110_000}
+          color={0xb85f3a}
+          emissive={0xa63d20}
+          emissiveIntensity={0.24}
+          roughness={0.88}
+          glowColor={0xca5c34}
+          glowOpacity={0.16}
+        />
+        <Planet
+          {...makeHoverHandlers('Jupiter')}
+          position={scene.jupiterWorld}
+          radiusKm={JUPITER_RADIUS_KM}
+          visualRadiusKm={240_000}
+          color={0xcfa682}
+          emissive={0xa06b41}
+          emissiveIntensity={0.16}
+          roughness={0.8}
+          glowColor={0xd5a47a}
+          glowOpacity={0.12}
+          glowScale={1.1}
+        />
+        <Planet
+          {...makeHoverHandlers('Saturn')}
+          position={scene.saturnWorld}
+          radiusKm={SATURN_RADIUS_KM}
+          visualRadiusKm={210_000}
+          color={0xd9c28f}
+          emissive={0xb69146}
+          emissiveIntensity={0.18}
+          roughness={0.82}
+          glowColor={0xe0c887}
+          glowOpacity={0.14}
+          glowScale={1.12}
+          ring={{
+            innerRadiusKm: SATURN_RADIUS_KM * 1.35,
+            outerRadiusKm: SATURN_RADIUS_KM * 2.2,
+            color: 0xd4c09c,
+            opacity: 0.62,
+            tiltRad: 0.45,
+          }}
+        />
+        <Earth
+          {...makeHoverHandlers('Earth')}
+          position={scene.earthWorld}
+          gmstRad={scene.gmstRad}
+          showAxes={showObjectAxes}
+        />
         <Moon
+          {...makeHoverHandlers('Moon')}
           position={scene.moonWorld}
           orientation={scene.moonOrientation}
           showAxes={showObjectAxes}
@@ -121,6 +257,7 @@ export default function Scene() {
           consumeAnchorTargetSwitchMode={consumeAnchorTargetSwitchMode}
         />
         <WorldHud />
+        <HoverTip tip={hoverTip} />
       </Suspense>
 
       {/* EffectComposer outside Suspense — must never unmount or it causes black frames */}

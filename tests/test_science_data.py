@@ -29,6 +29,23 @@ def angular_error_deg(a: tuple[float, float, float], b: tuple[float, float, floa
 
 
 class ScienceDataTests(unittest.TestCase):
+    def test_planet_ephemeris_arrays_exist_and_match_sample_count(self) -> None:
+        ephemeris = load_json("ephemeris.json")
+        planet_keys = [
+            "mercuryPosECI",
+            "venusPosECI",
+            "marsPosECI",
+            "jupiterPosECI",
+            "saturnPosECI",
+        ]
+
+        for key in planet_keys:
+            self.assertIn(key, ephemeris, f"Missing {key} in ephemeris.json")
+            self.assertEqual(len(ephemeris[key]), ephemeris["count"], f"{key} length does not match count")
+            for vec in ephemeris[key]:
+                self.assertEqual(len(vec), 3, f"{key} entry is not a 3-vector")
+                self.assertTrue(all(math.isfinite(component) for component in vec), f"{key} contains a non-finite value")
+
     def test_sun_stays_near_ecliptic_plane(self) -> None:
         ephemeris = load_json("ephemeris.json")
         obliquity = math.radians(23.4392911)

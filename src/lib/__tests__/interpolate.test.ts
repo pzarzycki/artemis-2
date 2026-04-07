@@ -16,6 +16,11 @@ function makeEphemeris(gmstValues: number[], intervalHours = 0.25): EphemerisDat
       300_000 + i * 100, i * 50, i * 20,
     ] as [number, number, number]),
     sunPosECI: Array.from({ length: count }, () => [1e8, 0, 0] as [number, number, number]),
+    mercuryPosECI: Array.from({ length: count }, (_, i) => [50_000 + i * 10, -1000 + i * 3, i] as [number, number, number]),
+    venusPosECI: Array.from({ length: count }, (_, i) => [90_000 + i * 12, 2000 + i * 4, -2 * i] as [number, number, number]),
+    marsPosECI: Array.from({ length: count }, (_, i) => [150_000 + i * 15, -3000 + i * 5, 3 * i] as [number, number, number]),
+    jupiterPosECI: Array.from({ length: count }, (_, i) => [700_000 + i * 20, 4000 + i * 6, -4 * i] as [number, number, number]),
+    saturnPosECI: Array.from({ length: count }, (_, i) => [1_200_000 + i * 25, -5000 + i * 7, 5 * i] as [number, number, number]),
     gmstRad: gmstValues,
     moonOrientation: Array.from({ length: count }, (_, i) => [270.0, 66.5, i * 10] as [number, number, number]),
   };
@@ -82,6 +87,20 @@ describe('interpolateEphemeris: Moon orientation', () => {
       expect(s.moonOrientation[2]).toBeGreaterThanOrEqual(0);
       expect(s.moonOrientation[2]).toBeLessThan(360);
     }
+  });
+});
+
+describe('interpolateEphemeris: additional planet vectors', () => {
+  it('interpolates additive planet arrays alongside Sun and Moon', () => {
+    const data = makeEphemeris([0, 0.1, 0.2, 0.3], 1.0);
+    const midJD = data.startJD + 1.5 * (data.intervalHours / 24);
+    const s = interpolateEphemeris(data, midJD);
+
+    expect(s.mercuryPosECI[0]).toBeCloseTo(50_015, 4);
+    expect(s.venusPosECI[1]).toBeCloseTo(2_006, 4);
+    expect(s.marsPosECI[2]).toBeCloseTo(4.5, 4);
+    expect(s.jupiterPosECI[0]).toBeCloseTo(700_030, 4);
+    expect(s.saturnPosECI[1]).toBeCloseTo(-4_989.5, 4);
   });
 });
 

@@ -26,6 +26,7 @@ This README defines the coordinate frames, time conventions, data products, and 
 ## Project Overview
 
 The application renders Earth, Moon, Sun, the Artemis II spacecraft, mission trajectory, a celestial background map, and orientation helpers.
+It also renders Mercury, Venus, Mars, Jupiter, and Saturn from the same inertial ephemeris pipeline.
 
 The technical contract covers:
 
@@ -370,6 +371,7 @@ For Earth, local `+Z` stays aligned with inertial world `+Z`, while local `+X/+Y
 
 - `moonPos...`: Moon relative to Earth center, inertial geocentric frame
 - `sunPos...`: Sun relative to Earth center, inertial geocentric frame
+- `mercuryPos...`, `venusPos...`, `marsPos...`, `jupiterPos...`, `saturnPos...`: planetary relative-to-Earth inertial vectors used for scene placement
 - `earthPosBCRS`: Earth relative to Solar System barycenter, barycentric inertial frame
 - `gmstRad` or equivalent Earth orientation quantity: Earth rotation for Earth-fixed longitude mapping
 - `moonOrientation`: Moon pole and prime meridian orientation

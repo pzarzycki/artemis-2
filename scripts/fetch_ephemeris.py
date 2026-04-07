@@ -30,6 +30,13 @@ SPICE_KERNELS = {
 MOON_BODY = 301
 SUN_BODY = 10
 EARTH_BODY = 399
+MERCURY_BODY = 199
+VENUS_BODY = 299
+# de440s exposes planetary barycenters for the outer planets in this project setup.
+# Those are the supported targets we use for scene placement.
+MARS_BODY = 4
+JUPITER_BODY = 5
+SATURN_BODY = 6
 
 
 def dt_to_jd(dt: datetime) -> float:
@@ -59,6 +66,11 @@ def compute_with_spice(
 
     moon_pos_eci = []
     sun_pos_eci = []
+    mercury_pos_eci = []
+    venus_pos_eci = []
+    mars_pos_eci = []
+    jupiter_pos_eci = []
+    saturn_pos_eci = []
     earth_pos_bcrs = []
     gmst_rad = []
     moon_orient = []
@@ -81,6 +93,22 @@ def compute_with_spice(
         # Sun position in GCRS J2000 (km) — observer = Earth center
         sun_state, _ = spice.spkez(SUN_BODY, et, "J2000", "NONE", EARTH_BODY)
         sun_pos_eci.append([round(sun_state[0], 3), round(sun_state[1], 3), round(sun_state[2], 3)])
+
+        # Planet positions in GCRS J2000 (km) — observer = Earth center
+        mercury_state, _ = spice.spkez(MERCURY_BODY, et, "J2000", "NONE", EARTH_BODY)
+        mercury_pos_eci.append([round(mercury_state[0], 3), round(mercury_state[1], 3), round(mercury_state[2], 3)])
+
+        venus_state, _ = spice.spkez(VENUS_BODY, et, "J2000", "NONE", EARTH_BODY)
+        venus_pos_eci.append([round(venus_state[0], 3), round(venus_state[1], 3), round(venus_state[2], 3)])
+
+        mars_state, _ = spice.spkez(MARS_BODY, et, "J2000", "NONE", EARTH_BODY)
+        mars_pos_eci.append([round(mars_state[0], 3), round(mars_state[1], 3), round(mars_state[2], 3)])
+
+        jupiter_state, _ = spice.spkez(JUPITER_BODY, et, "J2000", "NONE", EARTH_BODY)
+        jupiter_pos_eci.append([round(jupiter_state[0], 3), round(jupiter_state[1], 3), round(jupiter_state[2], 3)])
+
+        saturn_state, _ = spice.spkez(SATURN_BODY, et, "J2000", "NONE", EARTH_BODY)
+        saturn_pos_eci.append([round(saturn_state[0], 3), round(saturn_state[1], 3), round(saturn_state[2], 3)])
 
         # Earth position in BCRS J2000 (km from Solar System Barycenter)
         # BCRS origin = SSB (NAIF ID 0), axes = ICRF/J2000
@@ -125,6 +153,11 @@ def compute_with_spice(
     return {
         "moonPosECI": moon_pos_eci,
         "sunPosECI": sun_pos_eci,
+        "mercuryPosECI": mercury_pos_eci,
+        "venusPosECI": venus_pos_eci,
+        "marsPosECI": mars_pos_eci,
+        "jupiterPosECI": jupiter_pos_eci,
+        "saturnPosECI": saturn_pos_eci,
         "earthPosBCRS": earth_pos_bcrs,
         "gmstRad": [round(g, 8) for g in gmst_rad_unwrapped],
         "moonOrientation": moon_orient,

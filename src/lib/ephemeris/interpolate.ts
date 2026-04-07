@@ -14,6 +14,16 @@ export interface EphemerisData {
   moonPosECI: Vec3[];
   /** Sun positions in GCRS J2000 (km) */
   sunPosECI: Vec3[];
+  /** Mercury positions in GCRS J2000 (km) */
+  mercuryPosECI: Vec3[];
+  /** Venus positions in GCRS J2000 (km) */
+  venusPosECI: Vec3[];
+  /** Mars positions in GCRS J2000 (km) */
+  marsPosECI: Vec3[];
+  /** Jupiter positions in GCRS J2000 (km) */
+  jupiterPosECI: Vec3[];
+  /** Saturn positions in GCRS J2000 (km) */
+  saturnPosECI: Vec3[];
   gmstRad: number[];
   moonOrientation: [number, number, number][];
   /**
@@ -65,6 +75,11 @@ export interface SpacecraftState {
 export interface EphemerisState {
   moonPosECI: Vec3;
   sunPosECI: Vec3;
+  mercuryPosECI: Vec3;
+  venusPosECI: Vec3;
+  marsPosECI: Vec3;
+  jupiterPosECI: Vec3;
+  saturnPosECI: Vec3;
   gmstRad: number;
   moonOrientation: [number, number, number];
   /** Earth position in BCRS J2000 (km from SSB). Null if not in ephemeris data. */
@@ -144,6 +159,11 @@ export function interpolateEphemeris(data: EphemerisData, jd: number): Ephemeris
   return {
     moonPosECI: interpVec3(data.moonPosECI, data.count, clampedIdx, t),
     sunPosECI: interpVec3(data.sunPosECI, data.count, clampedIdx, t),
+    mercuryPosECI: interpVec3(data.mercuryPosECI, data.count, clampedIdx, t),
+    venusPosECI: interpVec3(data.venusPosECI, data.count, clampedIdx, t),
+    marsPosECI: interpVec3(data.marsPosECI, data.count, clampedIdx, t),
+    jupiterPosECI: interpVec3(data.jupiterPosECI, data.count, clampedIdx, t),
+    saturnPosECI: interpVec3(data.saturnPosECI, data.count, clampedIdx, t),
     gmstRad,
     moonOrientation,
     earthPosBCRS: data.earthPosBCRS
