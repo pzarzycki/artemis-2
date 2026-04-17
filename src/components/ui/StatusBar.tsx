@@ -6,6 +6,7 @@ import ArtemisLogo from './ArtemisLogo';
 import LearnDialog from './LearnDialog';
 import SettingsDialog from './SettingsDialog';
 import styles from './StatusBar.module.css';
+import dialogStyles from './ModeToggleDialog.module.css';
 
 function LinkedInIcon() {
   return (
@@ -159,6 +160,39 @@ export default function StatusBar() {
       </div>
       {activeDialog === 'learn' && <LearnDialog onClose={closeDialog} />}
       {activeDialog === 'settings' && <SettingsDialog onClose={closeDialog} />}
+      {activeDialog === 'missionStatus' && (
+        <div className={dialogStyles.overlay} onClick={closeDialog}>
+          <div
+            className={`${dialogStyles.dialog} hud-panel`}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mission Status"
+          >
+            <div className={dialogStyles.header}>
+              <div className={dialogStyles.headerText}>
+                <h2 className={dialogStyles.title}>Mission Status</h2>
+              </div>
+              <button
+                type="button"
+                className={dialogStyles.close}
+                onClick={closeDialog}
+                aria-label="Close dialog"
+              >
+                <svg viewBox="0 0 24 24" className={dialogStyles.closeIcon} aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className={dialogStyles.body}>
+              <p className={dialogStyles.message}>
+                The Artemis II mission concluded with a successful splashdown in the Pacific Ocean off the coast of San Diego, California, at 8:07 p.m. EDT (5:07 p.m. PDT) on April 10, 2026.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

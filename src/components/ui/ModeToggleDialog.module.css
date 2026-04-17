@@ -1,0 +1,84 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 5, 10, 0.72);
+  z-index: 50;
+}
+
+.dialog {
+  width: min(500px, 100%);
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid rgba(182, 225, 255, 0.14);
+  background:
+    radial-gradient(circle at top left, rgba(0, 212, 170, 0.12), transparent 44%),
+    linear-gradient(180deg, rgba(18, 28, 46, 0.98), rgba(12, 18, 31, 0.96));
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f4fbff;
+  margin: 0;
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(182, 225, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d8ecff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.closeIcon {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.body {
+  padding: 24px 18px;
+  background: linear-gradient(180deg, rgba(12, 18, 31, 0.96), rgba(18, 28, 46, 0.98));
+}
+
+.message {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.6;
+}

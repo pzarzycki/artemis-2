@@ -4,10 +4,10 @@ import { useTrajectory } from '../../hooks/useTrajectory';
 import { ARTEMIS2_LAUNCH_JD } from '../../lib/time';
 import styles from './Timeline.module.css';
 
-const MISSION_DURATION_DAYS = 10; // Artemis 2 ~10 day mission
+const MISSION_DURATION_DAYS = 10;
 
 export default function Timeline() {
-  const { currentJD, isPlaying, playbackSpeed, mode, setCurrentJD, setIsPlaying, setPlaybackSpeed, setMode } =
+  const { currentJD, isPlaying, playbackSpeed, mode, setCurrentJD, setIsPlaying, setPlaybackSpeed, setMode, openDialog } =
     useMissionStore();
   const { trajectory } = useTrajectory(currentJD);
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -68,7 +68,7 @@ export default function Timeline() {
         <div className={styles.modeToggle}>
           <button
             className={`${styles.modeToggleBtn} ${mode === 'live' ? styles.activeMode : ''}`}
-            onClick={() => setMode('live')}
+            onClick={() => openDialog('missionStatus')}
           >
             {mode === 'live' && <span className={styles.modeDot} />}
             Live
@@ -151,6 +151,7 @@ export default function Timeline() {
           <div className={styles.thumb} style={{ left: `${progress * 100}%` }} />
         </div>
       </div>
+
     </div>
   );
 }

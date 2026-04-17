@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getDefaultMissionJD } from '../lib/time';
+import { getMiddleMissionJD } from '../lib/time';
 import type { Vec3 } from '../lib/coordinates/types';
 import type { StarMapLayer, StarMapResolution } from '../config/starmaps';
 
@@ -9,7 +9,7 @@ export type LookTarget = 'none' | 'sun' | 'earth' | 'moon' | 'spacecraft';
 export type MissionMode = 'live' | 'scrub';
 export type ReferenceFrame = 'GCRS' | 'BCRS';
 export type LearnSection = 'sources' | 'world' | 'frames' | 'data' | 'gravity' | 'camera' | 'planning';
-export type ActiveDialog = 'learn' | 'settings' | null;
+export type ActiveDialog = 'learn' | 'settings' | 'missionStatus' | null;
 
 interface MissionState {
   currentJD: number;
@@ -65,8 +65,8 @@ interface MissionState {
 }
 
 export const useMissionStore = create<MissionState>((set) => ({
-  currentJD: getDefaultMissionJD(),
-  mode: 'live',
+  currentJD: getMiddleMissionJD(),
+  mode: 'scrub',
   playbackSpeed: 60,
   isPlaying: false,
   anchorTarget: 'overview',
@@ -95,7 +95,7 @@ export const useMissionStore = create<MissionState>((set) => ({
   setMode: (mode) =>
     set((state) => ({
       mode,
-      currentJD: mode === 'live' ? getDefaultMissionJD() : state.currentJD,
+      currentJD: mode === 'live' ? getMiddleMissionJD() : state.currentJD,
       isPlaying: mode === 'scrub' ? state.isPlaying : false,
     })),
   setPlaybackSpeed: (playbackSpeed) => set({ playbackSpeed }),
