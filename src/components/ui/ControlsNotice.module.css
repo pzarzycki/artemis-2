@@ -11,6 +11,9 @@
 
 .dialog {
   width: min(980px, 100%);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -41,7 +44,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
   padding: 14px 18px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .columns {
@@ -231,8 +237,20 @@
   accent-color: #00d4aa;
 }
 
+.actions {
+  position: sticky;
+  bottom: -16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -18px -16px;
+  padding: 12px 18px 16px;
+  background: linear-gradient(180deg, rgba(9, 14, 25, 0.86), rgba(9, 14, 25, 0.98));
+  border-top: 1px solid rgba(182, 225, 255, 0.1);
+}
+
 .button {
-  align-self: flex-end;
   min-width: 124px;
   padding: 9px 14px;
   border: 1px solid rgba(0, 212, 170, 0.22);
@@ -246,13 +264,56 @@
 }
 
 @media (max-width: 640px) {
+  .overlay {
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .dialog {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .header {
+    padding: 12px 14px 10px;
+  }
+
+  .body {
+    gap: 10px;
+    padding: 12px 14px 14px;
+  }
+
   .columns,
   .infoGrid,
   .infoGridDouble {
     grid-template-columns: 1fr;
   }
 
+  .column {
+    gap: 10px;
+  }
+
+  .panel,
+  .anchorCallout {
+    padding: 10px;
+  }
+
+  .mouseRow {
+    grid-template-columns: 1fr;
+  }
+
   .mouseItem {
     padding: 4px 0;
+  }
+
+  .actions {
+    bottom: -14px;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0 -14px -14px;
+    padding: 10px 14px 14px;
+  }
+
+  .button {
+    width: 100%;
   }
 }

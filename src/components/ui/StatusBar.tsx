@@ -132,7 +132,10 @@ export default function StatusBar() {
               aria-label="Open source on GitHub"
             >
               <StarIcon />
-              <span>Project GitHub</span>
+              <span>
+                <span className={styles.githubPrefix}>Project </span>
+                GitHub
+              </span>
             </button>
           </div>
           <div className={styles.shareGroup}>

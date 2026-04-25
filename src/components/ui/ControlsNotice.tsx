@@ -173,18 +173,20 @@ export default function ControlsNotice({ onDismiss }: ControlsNoticeProps) {
             </div>
           </div>
 
-          <label className={styles.checkboxRow}>
-            <input
-              type="checkbox"
-              checked={dontShowAgain}
-              onChange={(e) => setDontShowAgain(e.target.checked)}
-            />
-            <span>Don&apos;t show again</span>
-          </label>
+          <div className={styles.actions}>
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={dontShowAgain}
+                onChange={(e) => setDontShowAgain(e.target.checked)}
+              />
+              <span>Don&apos;t show again</span>
+            </label>
 
-          <button type="button" className={styles.button} onClick={() => onDismiss(dontShowAgain)}>
-            Start Exploring
-          </button>
+            <button type="button" className={styles.button} onClick={() => onDismiss(dontShowAgain)}>
+              Start Exploring
+            </button>
+          </div>
         </div>
       </div>
     </div>
